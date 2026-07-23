@@ -2,7 +2,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
 export function generateOtp(): string {
-  return crypto.randomInt(100000, 99999).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 export async function hashOtp(otp: string): Promise<string> {

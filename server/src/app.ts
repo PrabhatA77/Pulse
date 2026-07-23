@@ -1,16 +1,18 @@
+import express from "express";
 import cors from "cors";
-import express , {type Express} from "express";
-import type { SessionStatus } from "../../shared/types/session.types.js";
+import cookieParser from "cookie-parser";
+import { env } from "./config/env.js";
+import authRoutes from "./routes/auth.routes.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 
-export function createApp():Express{
-    const app = express();
-    app.use(cors());
-    app.use(express.json());
+const app = express();
 
-    app.get("/health",(_req,res)=>{
-        const states:SessionStatus[] = ["idle","coding","evaluated"];
-        res.json({status:"ok",sample:states});
-    });
+app.use(cors({ origin: env.clientUrl, credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
 
-    return app;
-}
+app.use("/api/auth", authRoutes);
+
+app.use(errorHandler);
+
+export default app;

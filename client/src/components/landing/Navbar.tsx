@@ -1,11 +1,16 @@
 import logo from "../../assets/logo.png";
 import { useState } from "react";
 import { Sun, Moon, Menu, X } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/authStore";
 
 const NAV_LINK_CLASS =
   "transition-all duration-300 hover:text-[#1a3a5c] dark:hover:text-[#019bf0] py-1 px-2 rounded-2xl hover:bg-gray-300 dark:hover:bg-gray-800 dark:text-gray-300";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuthStore();
+
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark"),
   );
@@ -17,17 +22,23 @@ const Navbar = () => {
     setIsDark(isDark);
   };
 
+  const handleLogout = async () => {
+    await logout();
+    setMenuOpen(false);
+    navigate("/");
+  };
+
   return (
     <div className="transition-all duration-300 border-none bg-gray-200 dark:bg-[#0e1316] relative w-full">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* logo image and name and sub-heading*/}
         <div className="flex items-center gap-4 sm:gap-10">
-          <div className="flex items-center">
+          <Link to="/" className="flex items-center">
             <img src={logo} alt="Pulse" className="h-10 sm:h-12 lg:h-15" />
             <p className="text-2xl font-bold text-[#1a3a5c] dark:text-[#019bf0] sm:text-3xl lg:text-5xl">
               PULSE
             </p>
-          </div>
+          </Link>
 
           {/* Product/Features — hidden on small screens, in the mobile menu instead */}
           <div className="hidden gap-5 md:flex">
@@ -36,7 +47,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* theme toggle (always visible) + signup/login (desktop only) */}
+        {/* theme toggle (always visible) + auth actions (desktop only) */}
         <div className="flex items-center gap-3">
           <button
             className="transition-all duration-300 dark:text-white"
@@ -50,8 +61,25 @@ const Navbar = () => {
           </button>
 
           <div className="hidden items-center gap-3 md:flex">
-            <button className={NAV_LINK_CLASS}>Signup</button>
-            <button className={NAV_LINK_CLASS}>Login</button>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard" className={NAV_LINK_CLASS}>
+                  Dashboard
+                </Link>
+                <button className={NAV_LINK_CLASS} onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/signup" className={NAV_LINK_CLASS}>
+                  Signup
+                </Link>
+                <Link to="/login" className={NAV_LINK_CLASS}>
+                  Login
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -74,8 +102,25 @@ const Navbar = () => {
           <div className="mx-auto flex max-w-7xl flex-col gap-1 border-t border-gray-300 px-4 pb-4 pt-2 dark:border-gray-800 sm:px-6 lg:px-8">
             <div className={NAV_LINK_CLASS}>Product</div>
             <div className={NAV_LINK_CLASS}>Features</div>
-            <button className={`${NAV_LINK_CLASS} text-left`}>Signup</button>
-            <button className={`${NAV_LINK_CLASS} text-left`}>Login</button>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard" className={NAV_LINK_CLASS} onClick={() => setMenuOpen(false)}>
+                  Dashboard
+                </Link>
+                <button className={`${NAV_LINK_CLASS} text-left`} onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/signup" className={NAV_LINK_CLASS} onClick={() => setMenuOpen(false)}>
+                  Signup
+                </Link>
+                <Link to="/login" className={NAV_LINK_CLASS} onClick={() => setMenuOpen(false)}>
+                  Login
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

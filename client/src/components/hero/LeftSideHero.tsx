@@ -1,6 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
+import { useAuthStore } from "../../store/authStore";
 
 const LeftSideHero = () => {
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return (
     <div className="flex w-full flex-col items-center gap-5 text-center xl:w-1/2 xl:items-start xl:text-left">
       <StatusBadge />
@@ -17,7 +22,10 @@ const LeftSideHero = () => {
         Get instant feedback on correctness, efficiency, and communication.
       </div>
 
-      <button className="transition-all duration-300 px-4 py-2 border-none uppercase font-semibold bg-gray-200 dark:bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 dark:text-white shadow">
+      <button
+        onClick={() => navigate(isAuthenticated ? "/dashboard" : "/signup")}
+        className="transition-all duration-300 px-4 py-2 border-none uppercase font-semibold bg-gray-200 dark:bg-gray-800 rounded-xl cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 dark:text-white shadow"
+      >
         get started
       </button>
     </div>

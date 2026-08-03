@@ -13,6 +13,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   clientUrl: required("CLIENT_URL"),
   mongoUri: required("MONGO_URI"),
+  pistonUri:required("PISTON_URI"),
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   googleClientId: required("GOOGLE_CLIENT_ID"),

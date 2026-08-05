@@ -11,6 +11,7 @@ export const TOPICS = [
     "Recursion & Backtracking",
     "Sorting & Searching",
     "Greedy",
+    "Binary Search"
 ] as const;
 
 export type Topic = (typeof TOPICS)[number];

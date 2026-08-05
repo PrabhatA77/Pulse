@@ -63,6 +63,82 @@ const problems: SeedProblem[] = [
     expectedTimeComplexity: "O(n)",
     expectedSpaceComplexity: "O(1)",
   },
+  {
+    title: "Contains Duplicate",
+    difficulty: "Easy",
+    topic: "Arrays",
+    description:
+      "Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.",
+    constraints: [
+      "1 <= nums.length <= 10^5",
+      "-10^9 <= nums[i] <= 10^9"
+    ],
+    testCases: [
+      { input: "[1,2,3,1]", expectedOutput: "true", isHidden: false },
+      { input: "[1,2,3,4]", expectedOutput: "false", isHidden: false },
+      { input: "[1,1,1,3,3,4,3,2,4,2]", expectedOutput: "true", isHidden: true },
+      { input: "[5]", expectedOutput: "false", isHidden: true }
+    ],
+    expectedTimeComplexity: "O(n)",
+    expectedSpaceComplexity: "O(n)",
+},
+{
+    title: "Best Time to Buy and Sell Stock",
+    difficulty: "Easy",
+    topic: "Arrays",
+    description:
+      "Given an array prices where prices[i] is the price of a stock on the ith day, return the maximum profit you can achieve.",
+    constraints: [
+      "1 <= prices.length <= 10^5",
+      "0 <= prices[i] <= 10^4"
+    ],
+    testCases: [
+      { input: "[7,1,5,3,6,4]", expectedOutput: "5", isHidden: false },
+      { input: "[7,6,4,3,1]", expectedOutput: "0", isHidden: false },
+      { input: "[2,4,1]", expectedOutput: "2", isHidden: true },
+      { input: "[3,2,6,5,0,3]", expectedOutput: "4", isHidden: true }
+    ],
+    expectedTimeComplexity: "O(n)",
+    expectedSpaceComplexity: "O(1)",
+},
+{
+    title: "Merge Two Sorted Lists",
+    difficulty: "Easy",
+    topic: "Linked List",
+    description:
+      "Merge two sorted linked lists and return the merged sorted list.",
+    constraints: [
+      "The number of nodes in both lists is in the range [0, 50]",
+      "-100 <= Node.val <= 100"
+    ],
+    testCases: [
+      { input: "[1,2,4]\n[1,3,4]", expectedOutput: "[1,1,2,3,4,4]", isHidden: false },
+      { input: "[]\n[]", expectedOutput: "[]", isHidden: false },
+      { input: "[]\n[0]", expectedOutput: "[0]", isHidden: true },
+      { input: "[2]\n[1]", expectedOutput: "[1,2]", isHidden: true }
+    ],
+    expectedTimeComplexity: "O(n+m)",
+    expectedSpaceComplexity: "O(1)",
+},
+{
+    title: "Binary Search",
+    difficulty: "Easy",
+    topic: "Binary Search",
+    description:
+      "Given a sorted array of integers nums and an integer target, return its index if it exists, otherwise return -1.",
+    constraints: [
+      "1 <= nums.length <= 10^4",
+      "nums is sorted in ascending order"
+    ],
+    testCases: [
+      { input: "[-1,0,3,5,9,12]\n9", expectedOutput: "4", isHidden: false },
+      { input: "[-1,0,3,5,9,12]\n2", expectedOutput: "-1", isHidden: false },
+      { input: "[5]\n5", expectedOutput: "0", isHidden: true },
+      { input: "[1,2,3,4,5]\n1", expectedOutput: "0", isHidden: true }
+    ],
+    expectedTimeComplexity: "O(log n)",
+    expectedSpaceComplexity: "O(1)",
+},
 ];
 
 async function seed() {

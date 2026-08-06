@@ -13,11 +13,12 @@ interface ExecuteBody{
 
 interface TestCaseResult {
     passed:boolean;
-    input:string;
-    expectedOutput:string;
-    actualOutput:string;
-    stderr:string;
     isHidden:boolean;
+
+    input?: string;
+    expectedOutput?: string;
+    actualOutput?: string;
+    stderr?: string;
 }
 
 function normalize(output: string) {
@@ -55,14 +56,20 @@ export async function executeCode(req:Request<{},{},ExecuteBody>,res:Response){
     }
 
     const actualOutput = normalize(result.stdout);
-    results.push({
-      passed: actualOutput === normalize(testCase.expectedOutput),
-      input: testCase.input,
-      expectedOutput: testCase.expectedOutput,
-      actualOutput,
-      stderr: result.stderr,
-      isHidden: testCase.isHidden,
-    });
+    const passed = actualOutput === normalize(testCase.expectedOutput);
+
+    results.push(
+      testCase.isHidden
+        ?{passed,isHidden:true}
+        :{
+          passed,
+          isHidden:false,
+          input:testCase.input,
+          expectedOutput:testCase.expectedOutput,
+          actualOutput,
+          stderr:result.stderr,
+        },
+    );
   }
 
   res.status(200).json({

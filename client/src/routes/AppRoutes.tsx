@@ -9,6 +9,7 @@ import PublicRoute from "./PublicRoute";
 
 import LandingPage from "../pages/LandingPage";
 import DashboardPage from "../pages/DashboardPage";
+import InterviewWorkspace from "../pages/InterviewWorkspace";
 import SignupPage from "../pages/auth/SignupPage";
 import VerifyOtpPage from "../pages/auth/VerifyOtpPage";
 import LoginPage from "../pages/auth/LoginPage";
@@ -94,6 +95,15 @@ export default function AppRoutes() {
               element={
                 <PageWrapper>
                   <DashboardPage />
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/interview"
+              element={
+                <PageWrapper>
+                  <InterviewWorkspace />
                 </PageWrapper>
               }
             />

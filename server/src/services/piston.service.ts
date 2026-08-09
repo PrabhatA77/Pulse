@@ -5,7 +5,7 @@ const PISTON_URL = env.pistonUri;
 
 export const LANGUAGE_VERSIONS: Record<string, string> = {
   c: "10.2.0",
-  "c++": "10.2.0",
+  cpp: "10.2.0",
   go: "1.16.2",
   java: "15.0.2",
   javascript: "20.11.1",

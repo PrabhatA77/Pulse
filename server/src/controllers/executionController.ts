@@ -28,9 +28,12 @@ export async function executeCode(
   const testCases = includeHidden
     ? problem.testCases
     : problem.testCases.filter((tc) => !tc.isHidden);
+  
+  const signature = {functionName:problem.functionName,parameters:problem.parameters,returnType:problem.returnType};
   const { results, compileError } = await runTestCases(
     language,
     code,
+    signature,
     testCases,
   );
 

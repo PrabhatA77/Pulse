@@ -36,7 +36,7 @@ const problems: SeedProblem[] = [
       { input: { nums: [2, 7, 11, 15], target: 9 }, expectedOutput: [0, 1], isHidden: false, explanation: "nums[0] + nums[1] == 9" },
       { input: { nums: [3, 2, 4], target: 6 }, expectedOutput: [1, 2], isHidden: false },
       { input: { nums: [3, 3], target: 6 }, expectedOutput: [0, 1], isHidden: true },
-      { input: { nums: [1, 5, 3, 9, 2], target: 11 }, expectedOutput: [1, 3], isHidden: true },
+      { input: { nums: [1, 5, 3, 9, 2], target: 11 }, expectedOutput: [3, 4], isHidden: true },
     ],
     expectedTimeComplexity: "O(n)",
     expectedSpaceComplexity: "O(n)",

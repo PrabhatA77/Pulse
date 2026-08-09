@@ -30,7 +30,17 @@ export async function submitInterview(req: AuthedSubmitRequest, res: Response) {
     throw new AppError("Problem not found", 404);
   }
 
-  const { results, compileError } = await runTestCases(language, code, problem.testCases);
+  const signature = {
+    functionName: problem.functionName,
+    parameters: problem.parameters,
+    returnType: problem.returnType,
+  };
+  const { results, compileError } = await runTestCases(
+    language,
+    code,
+    signature,
+    problem.testCases,
+  );
 
   if (compileError) {
     res.status(200).json({ compileError, results: [], feedback: null });

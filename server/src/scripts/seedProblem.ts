@@ -10,6 +10,9 @@ type SeedProblem = Pick<
   | "topic"
   | "description"
   | "constraints"
+  | "functionName"
+  | "parameters"
+  | "returnType"
   | "testCases"
   | "expectedTimeComplexity"
   | "expectedSpaceComplexity"
@@ -22,21 +25,18 @@ const problems: SeedProblem[] = [
     topic: "Arrays",
     description:
       "Given an array of integers nums and an integer target, return the indices of the two numbers that add up to target. Assume exactly one solution exists, and the same element can't be used twice.",
-    constraints: [
-      "2 <= nums.length <= 10^4",
-      "-10^9 <= nums[i] <= 10^9",
-      "Exactly one valid answer exists",
+    constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "Exactly one valid answer exists"],
+    functionName: "twoSum",
+    parameters: [
+      { name: "nums", type: "int[]" },
+      { name: "target", type: "int" },
     ],
+    returnType: "int[]",
     testCases: [
-      {
-        input: "[2,7,11,15]\n9",
-        expectedOutput: "[0,1]",
-        isHidden: false,
-        explanation: "nums[0] + nums[1] == 9",
-      },
-      { input: "[3,2,4]\n6", expectedOutput: "[1,2]", isHidden: false },
-      { input: "[3,3]\n6", expectedOutput: "[0,1]", isHidden: true },
-      { input: "[1,5,3,9,2]\n11", expectedOutput: "[1,3]", isHidden: true },
+      { input: { nums: [2, 7, 11, 15], target: 9 }, expectedOutput: [0, 1], isHidden: false, explanation: "nums[0] + nums[1] == 9" },
+      { input: { nums: [3, 2, 4], target: 6 }, expectedOutput: [1, 2], isHidden: false },
+      { input: { nums: [3, 3], target: 6 }, expectedOutput: [0, 1], isHidden: true },
+      { input: { nums: [1, 5, 3, 9, 2], target: 11 }, expectedOutput: [1, 3], isHidden: true },
     ],
     expectedTimeComplexity: "O(n)",
     expectedSpaceComplexity: "O(n)",
@@ -47,15 +47,15 @@ const problems: SeedProblem[] = [
     topic: "Stacks & Queues",
     description:
       "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. Brackets must close in the correct order.",
-    constraints: [
-      "1 <= s.length <= 10^4",
-      "s consists only of bracket characters",
-    ],
+    constraints: ["1 <= s.length <= 10^4", "s consists only of bracket characters"],
+    functionName: "isValid",
+    parameters: [{ name: "s", type: "string" }],
+    returnType: "boolean",
     testCases: [
-      { input: "()[]{}", expectedOutput: "true", isHidden: false },
-      { input: "(]", expectedOutput: "false", isHidden: false },
-      { input: "([)]", expectedOutput: "false", isHidden: true },
-      { input: "{[]}", expectedOutput: "true", isHidden: true },
+      { input: { s: "()[]{}" }, expectedOutput: true, isHidden: false },
+      { input: { s: "(]" }, expectedOutput: false, isHidden: false },
+      { input: { s: "([)]" }, expectedOutput: false, isHidden: true },
+      { input: { s: "{[]}" }, expectedOutput: true, isHidden: true },
     ],
     expectedTimeComplexity: "O(n)",
     expectedSpaceComplexity: "O(n)",
@@ -64,99 +64,18 @@ const problems: SeedProblem[] = [
     title: "Maximum Subarray",
     difficulty: "Medium",
     topic: "Dynamic Programming",
-    description:
-      "Given an integer array nums, find the contiguous subarray with the largest sum, and return that sum.",
+    description: "Given an integer array nums, find the contiguous subarray with the largest sum, and return that sum.",
     constraints: ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"],
+    functionName: "maxSubArray",
+    parameters: [{ name: "nums", type: "int[]" }],
+    returnType: "int",
     testCases: [
-      {
-        input: "[-2,1,-3,4,-1,2,1,-5,4]",
-        expectedOutput: "6",
-        isHidden: false,
-        explanation: "[4,-1,2,1] has the largest sum = 6",
-      },
-      { input: "[1]", expectedOutput: "1", isHidden: false },
-      { input: "[5,4,-1,7,8]", expectedOutput: "23", isHidden: true },
-      { input: "[-1,-2,-3]", expectedOutput: "-1", isHidden: true },
+      { input: { nums: [-2, 1, -3, 4, -1, 2, 1, -5, 4] }, expectedOutput: 6, isHidden: false, explanation: "[4,-1,2,1] has the largest sum = 6" },
+      { input: { nums: [1] }, expectedOutput: 1, isHidden: false },
+      { input: { nums: [5, 4, -1, 7, 8] }, expectedOutput: 23, isHidden: true },
+      { input: { nums: [-1, -2, -3] }, expectedOutput: -1, isHidden: true },
     ],
     expectedTimeComplexity: "O(n)",
-    expectedSpaceComplexity: "O(1)",
-  },
-  {
-    title: "Contains Duplicate",
-    difficulty: "Easy",
-    topic: "Arrays",
-    description:
-      "Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.",
-    constraints: ["1 <= nums.length <= 10^5", "-10^9 <= nums[i] <= 10^9"],
-    testCases: [
-      { input: "[1,2,3,1]", expectedOutput: "true", isHidden: false },
-      { input: "[1,2,3,4]", expectedOutput: "false", isHidden: false },
-      {
-        input: "[1,1,1,3,3,4,3,2,4,2]",
-        expectedOutput: "true",
-        isHidden: true,
-      },
-      { input: "[5]", expectedOutput: "false", isHidden: true },
-    ],
-    expectedTimeComplexity: "O(n)",
-    expectedSpaceComplexity: "O(n)",
-  },
-  {
-    title: "Best Time to Buy and Sell Stock",
-    difficulty: "Easy",
-    topic: "Arrays",
-    description:
-      "Given an array prices where prices[i] is the price of a stock on the ith day, return the maximum profit you can achieve.",
-    constraints: ["1 <= prices.length <= 10^5", "0 <= prices[i] <= 10^4"],
-    testCases: [
-      { input: "[7,1,5,3,6,4]", expectedOutput: "5", isHidden: false },
-      { input: "[7,6,4,3,1]", expectedOutput: "0", isHidden: false },
-      { input: "[2,4,1]", expectedOutput: "2", isHidden: true },
-      { input: "[3,2,6,5,0,3]", expectedOutput: "4", isHidden: true },
-    ],
-    expectedTimeComplexity: "O(n)",
-    expectedSpaceComplexity: "O(1)",
-  },
-  {
-    title: "Merge Two Sorted Lists",
-    difficulty: "Easy",
-    topic: "Linked List",
-    description:
-      "Merge two sorted linked lists and return the merged sorted list.",
-    constraints: [
-      "The number of nodes in both lists is in the range [0, 50]",
-      "-100 <= Node.val <= 100",
-    ],
-    testCases: [
-      {
-        input: "[1,2,4]\n[1,3,4]",
-        expectedOutput: "[1,1,2,3,4,4]",
-        isHidden: false,
-      },
-      { input: "[]\n[]", expectedOutput: "[]", isHidden: false },
-      { input: "[]\n[0]", expectedOutput: "[0]", isHidden: true },
-      { input: "[2]\n[1]", expectedOutput: "[1,2]", isHidden: true },
-    ],
-    expectedTimeComplexity: "O(n+m)",
-    expectedSpaceComplexity: "O(1)",
-  },
-  {
-    title: "Binary Search",
-    difficulty: "Easy",
-    topic: "Binary Search",
-    description:
-      "Given a sorted array of integers nums and an integer target, return its index if it exists, otherwise return -1.",
-    constraints: [
-      "1 <= nums.length <= 10^4",
-      "nums is sorted in ascending order",
-    ],
-    testCases: [
-      { input: "[-1,0,3,5,9,12]\n9", expectedOutput: "4", isHidden: false },
-      { input: "[-1,0,3,5,9,12]\n2", expectedOutput: "-1", isHidden: false },
-      { input: "[5]\n5", expectedOutput: "0", isHidden: true },
-      { input: "[1,2,3,4,5]\n1", expectedOutput: "0", isHidden: true },
-    ],
-    expectedTimeComplexity: "O(log n)",
     expectedSpaceComplexity: "O(1)",
   },
 ];

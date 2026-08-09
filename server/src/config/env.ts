@@ -19,4 +19,5 @@ export const env = {
   googleClientId: required("GOOGLE_CLIENT_ID"),
   resendApiKey: required("RESEND_API_KEY"),
   emailFrom: required("EMAIL_FROM"),
+  geminiApiKey:required("GEMINI_API_KEY"),
 };

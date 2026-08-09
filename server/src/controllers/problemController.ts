@@ -18,7 +18,7 @@ function toPublicProblem(problem:ProblemDocument){
                 output:testcase.expectedOutput,
                 explanation:testcase.explanation,
             })),
-        starterCode:problem.starterCode ? Object.fromEntries(problem.starterCode):{},
+        // starterCode:problem.starterCode ? Object.fromEntries(problem.starterCode):{},
     };
 }
 

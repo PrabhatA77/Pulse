@@ -9,6 +9,7 @@ import { problemService } from "../services/problem.service";
 import { executionService } from "../services/execution.service";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import type { Problem, ExecuteResponse } from "../types/problem.types";
+import { generateStarterCode } from "../utils/starterCode";
 
 // Keep in sync with LANGUAGE_VERSIONS in server/src/services/piston.service.ts.
 const LANGUAGES = [
@@ -40,7 +41,11 @@ const InterviewWorkspace = () => {
         const { data } = await problemService.getRandom(topic, difficulty);
         if (cancelled) return;
         setProblem(data);
-        setCodeByLanguage(data.starterCode ?? {});
+        const signature = { functionName: data.functionName, parameters: data.parameters, returnType: data.returnType };
+const initialCode = Object.fromEntries(
+  LANGUAGES.map((lang) => [lang.id, generateStarterCode(lang.id, signature)]),
+);
+setCodeByLanguage(initialCode);
       } catch (error) {
         if (!cancelled) toast.error(getErrorMessage(error, "Couldn't load a problem"));
       } finally {

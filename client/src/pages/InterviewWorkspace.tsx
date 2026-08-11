@@ -7,6 +7,9 @@ import CodeEditorPanel from "../components/workspace/CodeEditorPanel";
 import ConsolePanel from "../components/workspace/ConsolePanel";
 import { problemService } from "../services/problem.service";
 import { executionService } from "../services/execution.service";
+import { interviewService } from "../services/interview.service";
+import FeedbackModal from "../components/workspace/FeedbackModal";
+import type { InterviewFeedback } from "../types/problem.types";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import type { Problem, ExecuteResponse } from "../types/problem.types";
 import { generateStarterCode } from "../utils/starterCode";
@@ -27,10 +30,19 @@ const InterviewWorkspace = () => {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState("javascript");
-  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>({});
+  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(
+    {},
+  );
+
+  const [defaultCodeByLanguage, setDefaultCodeByLanguage] =
+  useState<Record<string, string>>({});
+
   const [running, setRunning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ExecuteResponse | null>(null);
+
+  const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,15 +51,30 @@ const InterviewWorkspace = () => {
       setResult(null);
       try {
         const { data } = await problemService.getRandom(topic, difficulty);
+
+        // console.log("Problem response:", data);
+        // console.log("parameters:", data.parameters);
+        // console.log("examples:", data.examples);
+        // console.log("constraints:", data.constraints);
+
         if (cancelled) return;
         setProblem(data);
-        const signature = { functionName: data.functionName, parameters: data.parameters, returnType: data.returnType };
-const initialCode = Object.fromEntries(
-  LANGUAGES.map((lang) => [lang.id, generateStarterCode(lang.id, signature)]),
-);
-setCodeByLanguage(initialCode);
+        const signature = {
+          functionName: data.functionName,
+          parameters: data.parameters,
+          returnType: data.returnType,
+        };
+        const initialCode = Object.fromEntries(
+          LANGUAGES.map((lang) => [
+            lang.id,
+            generateStarterCode(lang.id, signature),
+          ]),
+        );
+        setCodeByLanguage(initialCode);
+        setDefaultCodeByLanguage(initialCode);
       } catch (error) {
-        if (!cancelled) toast.error(getErrorMessage(error, "Couldn't load a problem"));
+        if (!cancelled)
+          toast.error(getErrorMessage(error, "Couldn't load a problem"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -63,35 +90,64 @@ setCodeByLanguage(initialCode);
     setCodeByLanguage((prev) => ({ ...prev, [language]: value }));
   };
 
-  const runOrSubmit = useCallback(
-    async (includeHidden: boolean) => {
-      if (!problem) return;
-      const setBusy = includeHidden ? setSubmitting : setRunning;
-      setBusy(true);
-      try {
-        const { data } = await executionService.execute(problem.id, language, code, includeHidden);
-        setResult(data);
-        if (data.compileError) {
-          toast.error("Compile error — check the console");
-        } else if (includeHidden) {
-          // Doesn't trigger AI scoring yet — next phase layers that on
-          // top of a successful Submit like this one.
-          if (data.success) toast.success("All test cases passed!");
-          else toast.error("Some test cases failed");
-        }
-      } catch (error) {
-        toast.error(getErrorMessage(error));
-      } finally {
-        setBusy(false);
+  const handleRun = useCallback(async () => {
+    if (!problem) return;
+
+    setRunning(true);
+
+    try {
+      const { data } = await executionService.execute(
+        problem.id,
+        language,
+        code,
+        false,
+      );
+
+      setResult(data);
+
+      if (data.compileError) {
+        toast.error("Compile error — check the console");
       }
-    },
-    [problem, language, code],
-  );
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setRunning(false);
+    }
+  }, [problem, language, code]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!problem) return;
+
+    setSubmitting(true);
+
+    try {
+      const { data } = await interviewService.submit(
+        problem.id,
+        language,
+        code,
+      );
+
+      //setResult(data);
+      setFeedback(data.feedback);
+
+      if (data.compileError) {
+        toast.error("Compile error — check the console");
+      } else if (data.feedback) {
+        setShowFeedback(true);
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  }, [problem, language, code]);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center dark:bg-[#0e1316]">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading a problem…</p>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          Loading a problem…
+        </p>
       </div>
     );
   }
@@ -100,7 +156,8 @@ setCodeByLanguage(initialCode);
     return (
       <div className="flex min-h-screen items-center justify-center px-4 text-center dark:bg-[#0e1316]">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Couldn't find a problem for that topic/difficulty — try different filters.
+          Couldn't find a problem for that topic/difficulty — try different
+          filters.
         </p>
       </div>
     );
@@ -118,20 +175,28 @@ setCodeByLanguage(initialCode);
             language={language}
             languages={LANGUAGES}
             code={code}
+            defaultCode={defaultCodeByLanguage[language] ?? ""}
             onLanguageChange={setLanguage}
             onCodeChange={handleCodeChange}
           />
         </div>
         <div className="h-65 shrink-0">
           <ConsolePanel
-            onRun={() => runOrSubmit(false)}
-            onSubmit={() => runOrSubmit(true)}
+            onRun={handleRun}
+            onSubmit={handleSubmit}
             running={running}
             submitting={submitting}
             result={result}
           />
         </div>
       </div>
+
+      {showFeedback && feedback && (
+        <FeedbackModal
+          feedback={feedback}
+          onClose={() => setShowFeedback(false)}
+        />
+      )}
     </div>
   );
 };

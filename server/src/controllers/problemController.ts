@@ -5,21 +5,26 @@ import { AppError } from "../middleware/errorHandler.js";
 
 function toPublicProblem(problem:ProblemDocument){
     return {
-        id:problem._id,
-        title:problem.title,
-        difficulty:problem.difficulty,
-        topic:problem.topic,
-        description:problem.description,
-        constraints:problem.constraints,
-        examples:problem.testCases
-            .filter((testcase)=>!testcase.isHidden)
-            .map((testcase)=>({
-                input:testcase.input,
-                output:testcase.expectedOutput,
-                explanation:testcase.explanation,
-            })),
-        // starterCode:problem.starterCode ? Object.fromEntries(problem.starterCode):{},
-    };
+    id: problem._id,
+    title: problem.title,
+    difficulty: problem.difficulty,
+    topic: problem.topic,
+    description: problem.description,
+
+    functionName: problem.functionName,
+    parameters: problem.parameters,
+    returnType: problem.returnType,
+
+    constraints: problem.constraints,
+
+    examples: problem.testCases
+      .filter((testcase) => !testcase.isHidden)
+      .map((testcase) => ({
+        input: testcase.input,
+        output: testcase.expectedOutput,
+        explanation: testcase.explanation,
+      })),
+  };
 }
 
 export async function getProblem(req:Request<{id:string}>,res:Response){

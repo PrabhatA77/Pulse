@@ -32,10 +32,10 @@ const ProblemPanel = ({problem}:ProblemPanelProps)=>{
         <div key={index} className="mt-4 rounded-xl bg-zinc-50 p-3 text-sm dark:bg-zinc-900">
           <p className="font-semibold text-zinc-900 dark:text-white">Example {index + 1}</p>
           <p className="mt-1 text-zinc-600 dark:text-zinc-400">
-            Input: <code className="text-zinc-900 dark:text-white">{example.input}</code>
+            Input: <code className="text-zinc-900 dark:text-white">{JSON.stringify(example.input)}</code>
           </p>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Output: <code className="text-zinc-900 dark:text-white">{example.output}</code>
+            Output: <code className="text-zinc-900 dark:text-white">{JSON.stringify(example.output)}</code>
           </p>
           {example.explanation && <p className="mt-1 text-zinc-500 dark:text-zinc-500">{example.explanation}</p>}
         </div>

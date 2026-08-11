@@ -1,12 +1,12 @@
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import type { ExecuteResponse } from "../../types/problem.types";
+import type { TestRunResult } from "../../types/problem.types";
 
 interface ConsolePanelProps {
   onRun: () => void;
   onSubmit: () => void;
   running: boolean;
   submitting: boolean;
-  result: ExecuteResponse | null;
+  result: TestRunResult | null;
 }
 
 const ConsolePanel = ({ onRun, onSubmit, running, submitting, result }: ConsolePanelProps) => {
@@ -59,9 +59,9 @@ const ConsolePanel = ({ onRun, onSubmit, running, submitting, result }: ConsoleP
 
                 {!testCase.isHidden && (
                   <div className="mt-2 space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                    <div>Input: <code className="text-zinc-900 dark:text-white">{testCase.input}</code></div>
-                    <div>Expected: <code className="text-zinc-900 dark:text-white">{testCase.expectedOutput}</code></div>
-                    <div>Got: <code className="text-zinc-900 dark:text-white">{testCase.actualOutput}</code></div>
+                    <div>Input: <code className="text-zinc-900 dark:text-white">{JSON.stringify(testCase.input)}</code></div>
+                    <div>Expected: <code className="text-zinc-900 dark:text-white">{JSON.stringify(testCase.expectedOutput)}</code></div>
+                    <div>Got: <code className="text-zinc-900 dark:text-white">{JSON.stringify(testCase.actualOutput)}</code></div>
                   </div>
                 )}
 

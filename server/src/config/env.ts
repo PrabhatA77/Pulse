@@ -20,4 +20,5 @@ export const env = {
   resendApiKey: required("RESEND_API_KEY"),
   emailFrom: required("EMAIL_FROM"),
   geminiApiKey:required("GEMINI_API_KEY"),
+  openaiApiKey:required("OPENAI_API_KEY"),
 };

@@ -47,8 +47,8 @@ export async function submitInterview(req: AuthedSubmitRequest, res: Response) {
     return;
   }
 
-  const testsPassed = results.filter((r) => r.passed).length;
-  const testsTotal = results.length;
+  const passedTestCases = results.filter((r) => r.passed).length;
+  const totalTestCases = results.length;
 
   const feedback = await evaluateSubmission({
     problemTitle: problem.title,
@@ -57,8 +57,8 @@ export async function submitInterview(req: AuthedSubmitRequest, res: Response) {
     expectedSpaceComplexity: problem.expectedSpaceComplexity,
     language,
     code,
-    testsPassed,
-    testsTotal,
+    testsPassed: passedTestCases,
+    testsTotal: totalTestCases,
   });
 
   await Interview.create({
@@ -66,11 +66,18 @@ export async function submitInterview(req: AuthedSubmitRequest, res: Response) {
     problem: problem._id,
     language,
     code,
-    testsPassed,
-    testsTotal,
-    allPassed: testsPassed === testsTotal,
+    passedTestCases,
+    totalTestCases,
+    allPassed: passedTestCases === totalTestCases,
     feedback,
   });
 
-  res.status(200).json({ compileError: undefined, results, feedback });
+  res.status(200).json({
+    compileError: undefined,
+    results,
+    passedTestCases,
+    totalTestCases,
+    allPassed: passedTestCases === totalTestCases,
+    feedback,
+  });
 }

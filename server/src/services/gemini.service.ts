@@ -1,11 +1,13 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { AppError } from "../middleware/errorHandler.js";
 import { env } from "../config/env.js";
 
-const apiKey = env.geminiApiKey;
-const MODEL = "gemini-3.5-flash";
+const apiKey = env.openaiApiKey;
+const MODEL = "gpt-5.4-mini";
 
-const client = apiKey ? new GoogleGenAI({ apiKey }) : null;
+const client = apiKey
+  ? new OpenAI({ apiKey })
+  : null;
 
 export interface EvaluationInput {
   problemTitle: string;
@@ -19,64 +21,71 @@ export interface EvaluationInput {
 }
 
 export interface EvaluationResult {
-  score: number;
   correctnessSummary: string;
   observedTimeComplexity: string;
   observedSpaceComplexity: string;
   complexityMatchesExpected: boolean;
   codeQualityNotes: string;
   strengths: string[];
-  areaToImprove: string[];
+  areasToImprove: string[];
   followUpQuestion: string;
 }
 
 const evaluationSchema = {
   type: "object",
   properties: {
-    score: {
-      type: "integer",
-      minimum: 0,
-      maximum: 100,
-      description: "Overall score for this submission.",
-    },
     correctnessSummary: {
       type: "string",
       description:
-        "1-2 sentence note on correctness, consistent with the test results given - do not contradict them.",
+        "1 sentence note on correctness, consistent with the test results given - do not contradict them.",
     },
+
     observedTimeComplexity: {
       type: "string",
       description:
         "Big-O time complexity of the submitted code, inferred by reading it.",
     },
+
     observedSpaceComplexity: {
       type: "string",
       description:
         "Big-O space complexity of the submitted code, inferred by reading it.",
     },
-    complexityMatchesExpected: { type: "boolean" },
+
+    complexityMatchesExpected: {
+      type: "boolean",
+    },
+
     codeQualityNotes: {
       type: "string",
-      description: "2-3 sentences on readability, naming, structure.",
+      description:
+        "1 sentences on readability, naming, and structure.",
     },
+
     strengths: {
       type: "array",
-      items: { type: "string" },
-      description: "1-3 short bullet points.",
+      items: {
+        type: "string",
+      },
+      description: "1-2 short bullet points.",
     },
+
     areasToImprove: {
       type: "array",
-      items: { type: "string" },
-      description: "1-3 short bullet points.",
+      items: {
+        type: "string",
+      },
+      description: "1-2 short bullet points.",
     },
+
     followUpQuestion: {
       type: "string",
       description:
         "One follow-up question a real interviewer would ask next, based on this submission.",
     },
   },
+
   required: [
-    "score",
     "correctnessSummary",
     "observedTimeComplexity",
     "observedSpaceComplexity",
@@ -86,58 +95,126 @@ const evaluationSchema = {
     "areasToImprove",
     "followUpQuestion",
   ],
+
+  additionalProperties: false,
 };
 
-export async function evaluateSubmission(input: EvaluationInput): Promise<EvaluationResult> {
+export async function evaluateSubmission(
+  input: EvaluationInput
+): Promise<EvaluationResult> {
   if (!client) {
-    throw new AppError("GEMINI_API_KEY is not set", 500);
+    throw new AppError("OPENAI_API_KEY is not set", 500);
   }
 
   const prompt = `You are an experienced technical interviewer reviewing a candidate's code submission.
 
 Problem: ${input.problemTitle}
+
 ${input.problemDescription}
 
-Expected complexity: ${input.expectedTimeComplexity} time, ${input.expectedSpaceComplexity} space.
+Expected complexity:
+- Time: ${input.expectedTimeComplexity}
+- Space: ${input.expectedSpaceComplexity}
 
 Submitted solution (${input.language}):
+
 \`\`\`${input.language}
 ${input.code}
 \`\`\`
 
-Test results (already verified by running the code — treat as fact): ${input.testsPassed}/${input.testsTotal} test cases passed.
+Test results (already verified by running the code — treat as fact):
 
-Evaluate the submission. Infer the actual time and space complexity by reading the code, compare it to the expected complexity, and comment on code quality. Keep correctnessSummary consistent with the ${input.testsPassed}/${input.testsTotal} result above — do not claim it passed all cases if it didn't, or vice versa.`;
+${input.testsPassed}/${input.testsTotal} test cases passed.
 
-  const interaction = await client.interactions.create({
-    model: MODEL,
-    input: prompt,
-    response_format: { type: "text", mime_type: "application/json", schema: evaluationSchema },
-  });
+Evaluate the submission.
 
-  if (!interaction.output_text) {
-    throw new AppError("AI evaluator returned an empty response", 502);
-  }
+Rules:
+1. Infer the actual time complexity by reading the code.
+2. Infer the actual space complexity by reading the code.
+3. Compare the actual complexity with the expected complexity.
+4. Evaluate code quality, readability, naming, and structure.
+5. Keep correctnessSummary consistent with the test results.
+6. Do not claim that all tests passed if they did not.
+7. Do not claim that the solution is correct if the test results show failures.
+8. Give practical feedback that would be useful in a technical interview.
+9. Return only the requested structured evaluation.`;
 
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(interaction.output_text);
-  } catch {
-    throw new AppError("AI evaluator returned invalid JSON", 502);
-  }
+    const response = await client.responses.create({
+      model: MODEL,
+      input: prompt,
 
-  if (!isEvaluationResult(parsed)) {
-    throw new AppError("AI evaluator response didn't match the expected shape", 502);
-  }
+      text: {
+        format: {
+          type: "json_schema",
+          name: "evaluation_result",
+          strict: true,
+          schema: evaluationSchema,
+        },
+      },
 
-  return parsed;
+      store: false,
+    });
+
+    if (!response.output_text) {
+      throw new AppError(
+        "AI evaluator returned an empty response",
+        502
+      );
+    }
+
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(response.output_text);
+    } catch {
+      throw new AppError(
+        "AI evaluator returned invalid JSON",
+        502
+      );
+    }
+
+    if (!isEvaluationResult(parsed)) {
+      throw new AppError(
+        "AI evaluator response didn't match the expected shape",
+        502
+      );
+    }
+
+    return parsed;
+  } catch (error: any) {
+    // Preserve our own AppErrors
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // OpenAI rate limit
+    if (error?.status === 429) {
+      throw new AppError(
+        "AI evaluation limit reached. Please try again later.",
+        429
+      );
+    }
+
+    console.error("OpenAI evaluation error:", error);
+
+    throw new AppError(
+      "AI evaluation failed",
+      502
+    );
+  }
 }
 
-function isEvaluationResult(value: unknown): value is EvaluationResult {
-  if (typeof value !== "object" || value === null) return false;
+function isEvaluationResult(
+  value: unknown
+): value is EvaluationResult {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
   const v = value as Record<string, unknown>;
+
   return (
-    typeof v.score === "number" &&
     typeof v.correctnessSummary === "string" &&
     typeof v.observedTimeComplexity === "string" &&
     typeof v.observedSpaceComplexity === "string" &&

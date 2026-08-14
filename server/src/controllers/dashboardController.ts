@@ -16,11 +16,10 @@ interface LeanInterview {
   _id: Types.ObjectId;
   problem: { _id: Types.ObjectId; title: string; topic: string; difficulty: string } | null;
   language: string;
-  testsPassed: number;
-  testsTotal: number;
+  passedTestCases: number;
+  totalTestCases: number;
   allPassed: boolean;
   feedback: {
-    score: number;
     correctnessSummary: string;
     observedTimeComplexity: string;
     observedSpaceComplexity: string;
@@ -41,12 +40,12 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
   const userId = new Types.ObjectId(req.userId);
   const windowStart = new Date(Date.now() - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
-  const [totalInterviews, scoreAgg, recent, activityAgg] = await Promise.all([
+  const [totalInterviews, solvedAgg, recent, activityAgg] = await Promise.all([
     Interview.countDocuments({ user: userId }),
 
-    Interview.aggregate<{ _id: null; avg: number }>([
-      { $match: { user: userId } },
-      { $group: { _id: null, avg: { $avg: "$feedback.score" } } },
+    Interview.aggregate<{ _id: null; count: number }>([
+      { $match: { user: userId, allPassed: true } },
+      { $count: "count" },
     ]),
 
     Interview.find({ user: userId })
@@ -65,7 +64,7 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
   res.status(200).json({
     stats: {
       totalInterviews,
-      averageScore: scoreAgg[0]?.avg != null ? Math.round(scoreAgg[0].avg) : null,
+      totalSolved: solvedAgg[0]?.count ?? 0,
     },
     recentInterviews: recent.map((interview) => ({
       id: interview._id.toString(),
@@ -73,9 +72,8 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
       topic: interview.problem?.topic ?? null,
       difficulty: interview.problem?.difficulty ?? null,
       language: interview.language,
-      score: interview.feedback.score,
-      testsPassed: interview.testsPassed,
-      testsTotal: interview.testsTotal,
+      passedTestCases: interview.passedTestCases,
+      totalTestCases: interview.totalTestCases,
       allPassed: interview.allPassed,
       feedback: interview.feedback,
       createdAt: interview.createdAt.toISOString(),

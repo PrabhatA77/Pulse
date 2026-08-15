@@ -10,6 +10,12 @@ export interface InterviewFeedback {
   areasToImprove: string[];
   followUpQuestion: string;
 }
+
+export type SubmissionStatus =
+  | "compile_error"
+  | "time_limit_exceeded"
+  | "wrong_answer"
+  | "accepted";
  
 export interface InterviewDocument extends Document {
   user: Types.ObjectId;
@@ -19,7 +25,8 @@ export interface InterviewDocument extends Document {
   passedTestCases: number;
   totalTestCases: number;
   allPassed: boolean;
-  feedback: InterviewFeedback;
+  status: SubmissionStatus;
+  feedback?: InterviewFeedback;
   createdAt: Date;
 }
  
@@ -46,7 +53,12 @@ const interviewSchema = new Schema<InterviewDocument>(
     passedTestCases: { type: Number, required: true, default: 0 },
     totalTestCases: { type: Number, required: true, default: 0 },
     allPassed: { type: Boolean, required: true, default: false },
-    feedback: { type: feedbackSchema, required: true },
+    status:{
+      type:String,
+      enum:["compile_error","time_limit_exceeded","wrong_answer","accepted"],
+      required:true,
+    },
+    feedback: { type: feedbackSchema, required: false },
   },
   { timestamps: true },
 );

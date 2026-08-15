@@ -9,7 +9,7 @@ const App = () => {
   },[checkAuth]);
 
   return (
-    <div>
+    <div className="dark:bg-[#0e1316]">
       <AppRoutes/>
     </div>
   )

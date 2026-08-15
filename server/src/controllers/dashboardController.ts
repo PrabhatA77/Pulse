@@ -7,7 +7,7 @@ interface AuthedRequest extends Request {
   userId?: string;
 }
 
-const ACTIVITY_WINDOW_DAYS = 90;
+const ACTIVITY_WINDOW_DAYS = 365;
 
 // Shape of what .find().populate("problem", "title topic difficulty").lean()
 // actually returns — Mongoose's own generics for lean+populate get messy
@@ -19,7 +19,9 @@ interface LeanInterview {
   passedTestCases: number;
   totalTestCases: number;
   allPassed: boolean;
-  feedback: {
+  status: "compile_error" | "time_limit_exceeded" | "wrong_answer" | "accepted";
+  // Only set once the user has clicked "Analyze with AI" for that submission.
+  feedback?: {
     correctnessSummary: string;
     observedTimeComplexity: string;
     observedSpaceComplexity: string;
@@ -69,14 +71,13 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
     recentInterviews: recent.map((interview) => ({
       id: interview._id.toString(),
       problemTitle: interview.problem?.title ?? "Deleted problem",
-      topic: interview.problem?.topic ?? null,
       difficulty: interview.problem?.difficulty ?? null,
-      language: interview.language,
+      createdAt: interview.createdAt.toISOString(),
+      allPassed: interview.allPassed,
+      status: interview.status,
       passedTestCases: interview.passedTestCases,
       totalTestCases: interview.totalTestCases,
-      allPassed: interview.allPassed,
-      feedback: interview.feedback,
-      createdAt: interview.createdAt.toISOString(),
+      feedback: interview.feedback ?? null,
     })),
     activityByDay: activityAgg.map((a) => ({ date: a._id, count: a.count })),
   });

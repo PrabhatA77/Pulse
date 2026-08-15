@@ -43,11 +43,17 @@ const CodeEditorPanel = ({
   const isDark = useIsDarkMode();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [editorThemeOverride, setEditorThemeOverride] = useState<
-  boolean | null
->(null);
-
-const editorDark = editorThemeOverride ?? isDark;
+  const toggleAppTheme = () => {
+  const root = document.documentElement;
+  if (isDark) {
+    root.classList.remove("dark");
+    localStorage.setItem("theme", "light");
+  } else {
+    root.classList.add("dark");
+    localStorage.setItem("theme", "dark");
+  }
+  window.dispatchEvent(new Event("theme-change"));
+};
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
@@ -293,8 +299,8 @@ const editorDark = editorThemeOverride ?? isDark;
           {/* Editor theme */}
           <button
             type="button"
-            onClick={() => setEditorThemeOverride((prev) => !(prev ?? isDark))}
-            title={editorDark ? "Use light editor" : "Use dark editor"}
+            onClick={toggleAppTheme}
+            title={isDark ? "Use light editor" : "Use dark editor"}
             className="
               ml-1 flex h-8 w-8 items-center justify-center
               rounded-lg
@@ -305,7 +311,7 @@ const editorDark = editorThemeOverride ?? isDark;
               dark:hover:bg-zinc-800 dark:hover:text-white
             "
           >
-            {editorDark ? (
+            {isDark ? (
               <Sun className="h-4 w-4 transition-transform duration-300 hover:rotate-45" />
             ) : (
               <Moon className="h-4 w-4 transition-transform duration-300 hover:-rotate-12" />
@@ -322,7 +328,7 @@ const editorDark = editorThemeOverride ?? isDark;
           value={code}
           onChange={(value) => onCodeChange(value ?? "")}
           onMount={handleEditorMount}
-          theme={editorDark ? "vs-dark" : "light"}
+          theme={isDark ? "vs-dark" : "light"}
           options={{
             fontSize: 14,
             minimap: { enabled: false },

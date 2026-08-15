@@ -1,68 +1,62 @@
-export type Difficulty = "Easy" | "Medium" | "Hard";
-export type ParamType = "int" | "float" | "string" | "boolean" | "int[]" | "float[]" | "string[]" | "boolean[]";
-
-export interface FunctionParam{
-    name:string;
-    type:ParamType;
+export interface Problem {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  topic: string;
+  functionName: string;
+  parameters: Array<{ name: string; type: string }>;
+  returnType: string;
+  examples: Array<{ input: string; output: string; explanation?: string }>;
+  constraints: string[];
 }
 
-export type TestCaseValue = number | string | boolean | number[] | string[] | boolean[]; 
-
-export interface ProblemExample{
-    input:Record<string,TestCaseValue>;
-    output:TestCaseValue;
-    explanation ?:string;
+export interface InterviewFeedback {
+  correctnessSummary: string;
+  observedTimeComplexity: string;
+  observedSpaceComplexity: string;
+  complexityMatchesExpected: boolean;
+  codeQualityNotes: string;
+  strengths: string[];
+  areasToImprove: string[];
+  followUpQuestion: string;
 }
 
-export interface Problem{
-    id:string;
-    title:string;
-    difficulty:Difficulty;
-    topic:string;
-    description:string;
-    constraints:string[];
-    functionName:string;
-    parameters:FunctionParam[];
-    returnType:ParamType;
-    examples:ProblemExample[];
+export interface TestCaseResult {
+  passed: boolean;
+  isHidden: boolean;
+  // Killed by the sandbox before it finished — a timeout or a memory
+  // limit breach (the backend can't reliably tell which, so both show
+  // up this way).
+  timedOut?: boolean;
+  input?: Record<string, unknown>;
+  expectedOutput?: unknown;
+  actualOutput?: unknown;
+  stderr?: string;
 }
 
-export interface TestCaseResult{
-    passed:boolean;
-    isHidden:boolean;
-    input?:Record<string,TestCaseValue>;
-    expectedOutput?:TestCaseValue;
-    actualOutput?:unknown;
-    stderr?:string;
+// What the "Run" button returns — full per-test-case breakdown.
+export interface TestRunResult {
+  compileError?: string;
+  results: TestCaseResult[];
 }
 
-export interface ExecuteResponse{
-    success:boolean;
-    compileError?:string;
-    results:TestCaseResult[];
+export type SubmissionStatus =
+  | "compile_error"
+  | "time_limit_exceeded"
+  | "wrong_answer"
+  | "accepted";
+
+// What "Submit" returns immediately — just the verdict, no AI feedback yet.
+export interface SubmitResult {
+  interviewId: string;
+  compileError?: string;
+  status: SubmissionStatus;
+  passedTestCases: number;
+  totalTestCases: number;
 }
 
-export interface TestRunResult{
-    compileError?: string;
-    results : TestCaseResult[];
-}
-
-export interface ExecuteResponse extends TestRunResult{
-    success:boolean;
-}
-
-export interface InterviewFeedback{
-    score:number;
-    correctnessSummary:string;
-    observedTimeComplexity:string;
-    observedSpaceComplexity:string;
-    complexityMatchesExpected:boolean;
-    codeQualityNotes:string;
-    strengths:string[];
-    areasToImprove:string[];
-    followUpQuestion:string;
-}
-
-export interface SubmitInterviewResponse extends TestRunResult{
-    feedback:InterviewFeedback | null;
+// What POST /interviews/:id/analyze returns.
+export interface AnalyzeResult {
+  feedback: InterviewFeedback;
 }

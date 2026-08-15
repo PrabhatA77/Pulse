@@ -16,10 +16,14 @@ export const LANGUAGE_VERSIONS: Record<string, string> = {
   typescript: "5.0.3",
 };
 
+const RUN_TIMEOUT_MS = 3000;
+const RUN_MEMORY_LIMIT_BYTES = 256*1024*1024; // 256MB
+
 interface PistonRunStep {
   stdout: string;
   stderr: string;
   code: number;
+  signal: string|null;
   output?: string;
 }
 
@@ -31,8 +35,9 @@ interface PistonResponse {
 export interface RunResult {
   stdout: string;
   stderr: string;
-  exitCode: number;
+  exitCode: number|null;
   compileError?: string;
+  timedOut?:boolean;
 }
 
 export async function runCode(
@@ -57,7 +62,8 @@ export async function runCode(
         version,
         files: [{ content: code }],
         stdin,
-        run_timeout: 3000
+        run_timeout: RUN_TIMEOUT_MS,
+        run_memory_limit: RUN_MEMORY_LIMIT_BYTES,
       }),
     });
   } catch {
@@ -94,6 +100,7 @@ export async function runCode(
   return {
     stdout: data.run.stdout ?? "",
     stderr: data.run.stderr ?? "",
-    exitCode: data.run.code ?? 0,
+    exitCode: data.run.code,
+    timedOut:data.run.signal != null,
   };
 }

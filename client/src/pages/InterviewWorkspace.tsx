@@ -8,10 +8,13 @@ import ConsolePanel from "../components/workspace/ConsolePanel";
 import { problemService } from "../services/problem.service";
 import { executionService } from "../services/execution.service";
 import { interviewService } from "../services/interview.service";
-import FeedbackModal from "../components/workspace/FeedbackModal";
-import type { InterviewFeedback } from "../types/problem.types";
+import type {
+  InterviewFeedback,
+  Problem,
+  TestRunResult,
+  SubmitResult,
+} from "../types/problem.types";
 import { getErrorMessage } from "../utils/getErrorMessage";
-import type { Problem, ExecuteResponse } from "../types/problem.types";
 import { generateStarterCode } from "../utils/starterCode";
 
 // Keep in sync with LANGUAGE_VERSIONS in server/src/services/piston.service.ts.
@@ -30,32 +33,28 @@ const InterviewWorkspace = () => {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState("javascript");
-  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(
-    {},
-  );
-
-  const [defaultCodeByLanguage, setDefaultCodeByLanguage] =
-  useState<Record<string, string>>({});
+  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>({});
+  const [defaultCodeByLanguage, setDefaultCodeByLanguage] = useState<Record<string, string>>({});
 
   const [running, setRunning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<ExecuteResponse | null>(null);
+  const [result, setResult] = useState<TestRunResult | null>(null);
 
+  // Submit is now two phases: the verdict comes back immediately, and the
+  // AI feedback is fetched separately, only when the user asks for it.
+  const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       setResult(null);
+      setSubmitResult(null);
+      setFeedback(null);
       try {
         const { data } = await problemService.getRandom(topic, difficulty);
-
-        // console.log("Problem response:", data);
-        // console.log("parameters:", data.parameters);
-        // console.log("examples:", data.examples);
-        // console.log("constraints:", data.constraints);
 
         if (cancelled) return;
         setProblem(data);
@@ -94,6 +93,8 @@ const InterviewWorkspace = () => {
     if (!problem) return;
 
     setRunning(true);
+    setSubmitResult(null);
+    setFeedback(null);
 
     try {
       const { data } = await executionService.execute(
@@ -119,21 +120,16 @@ const InterviewWorkspace = () => {
     if (!problem) return;
 
     setSubmitting(true);
+    setResult(null);
+    setFeedback(null);
 
     try {
-      const { data } = await interviewService.submit(
-        problem.id,
-        language,
-        code,
-      );
+      const { data } = await interviewService.submit(problem.id, language, code);
 
-      //setResult(data);
-      setFeedback(data.feedback);
+      setSubmitResult(data);
 
       if (data.compileError) {
         toast.error("Compile error — check the console");
-      } else if (data.feedback) {
-        setShowFeedback(true);
       }
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -141,6 +137,21 @@ const InterviewWorkspace = () => {
       setSubmitting(false);
     }
   }, [problem, language, code]);
+
+  const handleAnalyze = useCallback(async () => {
+    if (!submitResult) return;
+
+    setAnalyzing(true);
+
+    try {
+      const { data } = await interviewService.analyze(submitResult.interviewId);
+      setFeedback(data.feedback);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Couldn't get AI feedback"));
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [submitResult]);
 
   if (loading) {
     return (
@@ -164,41 +175,42 @@ const InterviewWorkspace = () => {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col gap-4 overflow-hidden p-4 dark:bg-[#0e1316] md:flex-row">
-      <div className="h-[40vh] w-full shrink-0 md:h-full md:w-95">
-        <ProblemPanel problem={problem} />
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-4">
-        <div className="min-h-0 flex-1">
-          <CodeEditorPanel
-            language={language}
-            languages={LANGUAGES}
-            code={code}
-            defaultCode={defaultCodeByLanguage[language] ?? ""}
-            onLanguageChange={setLanguage}
-            onCodeChange={handleCodeChange}
-          />
-        </div>
-        <div className="h-65 shrink-0">
-          <ConsolePanel
-            onRun={handleRun}
-            onSubmit={handleSubmit}
-            running={running}
-            submitting={submitting}
-            result={result}
-          />
-        </div>
-      </div>
-
-      {showFeedback && feedback && (
-        <FeedbackModal
-          feedback={feedback}
-          onClose={() => setShowFeedback(false)}
-        />
-      )}
+  <div className="flex h-auto min-h-screen w-full flex-col gap-4 p-4 dark:bg-[#0e1316] md:h-screen md:flex-row md:overflow-hidden">
+    {/* Problem Panel: compact on mobile, full height on desktop */}
+    <div className="h-[30vh] w-full shrink-0 md:h-full md:w-95">
+      <ProblemPanel problem={problem} />
     </div>
-  );
+
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      {/* Code Editor Panel: given generous height on mobile, flex on desktop */}
+      <div className="h-[50vh] min-h-87.5 md:h-auto md:min-h-0 md:flex-1">
+        <CodeEditorPanel
+          language={language}
+          languages={LANGUAGES}
+          code={code}
+          defaultCode={defaultCodeByLanguage[language] ?? ""}
+          onLanguageChange={setLanguage}
+          onCodeChange={handleCodeChange}
+        />
+      </div>
+
+      {/* Console Panel: reduced to 200px (h-52) on mobile, restored to h-80 on desktop */}
+      <div className="h-52 shrink-0 md:h-80">
+        <ConsolePanel
+          onRun={handleRun}
+          onSubmit={handleSubmit}
+          running={running}
+          submitting={submitting}
+          result={result}
+          submitResult={submitResult}
+          feedback={feedback}
+          analyzing={analyzing}
+          onAnalyze={handleAnalyze}
+        />
+      </div>
+    </div>
+  </div>
+);
 };
 
 export default InterviewWorkspace;

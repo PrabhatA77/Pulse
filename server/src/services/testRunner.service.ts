@@ -6,6 +6,9 @@ import { runCode } from "./piston.service.js";
 export interface TestCaseResult {
   passed: boolean;
   isHidden: boolean;
+  // Killed by Piston before it finished — a timeout or a memory limit
+  // breach (see the note in piston.service.ts on why we can't tell which).
+  timedOut?: boolean;
   input?: Record<string, TestCaseValue>;
   expectedOutput?: TestCaseValue;
   // unknown, not TestCaseValue — this is either a successfully-parsed
@@ -19,6 +22,12 @@ export interface TestRunSummary {
   results: TestCaseResult[];
   compileError?: string;
 }
+
+export type SubmissionStatus =
+  | "compile_error"
+  | "time_limit_exceeded"
+  | "wrong_answer"
+  | "accepted";
 
 function isSupportedLanguage(language: string): language is SupportedLanguage {
   return (SUPPORTED_LANGUAGES as readonly string[]).includes(language);
@@ -55,6 +64,22 @@ export async function runTestCases(
       return { results, compileError: result.compileError };
     }
 
+    if (result.timedOut) {
+      results.push(
+        testCase.isHidden
+          ? { passed: false, isHidden: true, timedOut: true }
+          : {
+              passed: false,
+              isHidden: false,
+              timedOut: true,
+              input: testCase.input,
+              expectedOutput: testCase.expectedOutput,
+              stderr: result.stderr,
+            },
+      );
+      continue;
+    }
+
     let actualOutput: unknown;
     let unparseable: string | undefined;
     try {
@@ -83,4 +108,14 @@ export async function runTestCases(
   }
 
   return { results };
+}
+
+export function summarizeStatus(
+  compileError: string|undefined,
+  results: TestCaseResult[],
+): SubmissionStatus{
+  if(compileError) return "compile_error";
+  if(results.some((r)=>r.timedOut)) return "time_limit_exceeded";
+  if(results.length > 0 && results.every((r)=>r.passed)) return "accepted";
+  return "wrong_answer"; 
 }

@@ -6,6 +6,7 @@ import { AppError } from "./errorHandler.js";
 
 export interface AuthRequest extends Request{
     userId?:string;
+    userRole?:"user"|"admin";
 };
 
 export async function protect(req:AuthRequest,_res:Response,next:NextFunction){
@@ -17,5 +18,13 @@ export async function protect(req:AuthRequest,_res:Response,next:NextFunction){
     if(!user) throw new AppError("User no longer exists",401);
 
     req.userId = decoded.userId
+    req.userRole = user.role;
+    next();
+}
+
+export function isAdmin(req:AuthRequest,_res:Response,next:NextFunction){
+    if(req.userRole !== "admin"){
+        throw new AppError("Admin access required",403);
+    }
     next();
 }

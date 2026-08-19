@@ -7,6 +7,7 @@ import executionRoutes from "./routes/execution.routes.js";
 import problemRoutes from "./routes/problem.routes.js";
 import interviewRoutes from "./routes/interview.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/api/problems", executionRoutes);
 app.use("/api/problems", problemRoutes);
 app.use("/api/interviews", interviewRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use(errorHandler);
 

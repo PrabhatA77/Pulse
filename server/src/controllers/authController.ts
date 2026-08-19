@@ -39,7 +39,7 @@ async function generateUniqueUsername(base: string): Promise<string> {
 }
 
 function publicUser(user: any) {
-  return { id: user.id, username: user.username, email: user.email };
+  return { id: user.id, username: user.username, email: user.email,role:user.role};
 }
 
 export async function signup(req: Request<{}, {}, SignupInput>, res: Response) {

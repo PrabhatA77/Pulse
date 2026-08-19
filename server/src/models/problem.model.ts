@@ -62,6 +62,9 @@ export interface ProblemDocument extends Document {
   testCases: TestCase[];
   expectedTimeComplexity: string;
   expectedSpaceComplexity: string;
+
+  createdAt:Date;
+  updatedAt:Date;
 }
 
 const functionParamSchema = new Schema<FunctionParam>(

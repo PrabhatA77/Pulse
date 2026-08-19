@@ -18,20 +18,31 @@ const AdminProblemsPage = () => {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadProblems = async () => {
-    setLoading(true);
-    try {
-      const { data } = await adminService.listProblems();
-      setProblems(data);
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Couldn't load problems"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadProblems();
+    let isMounted = true;
+
+    const fetchProblems = async () => {
+      try {
+        const { data } = await adminService.listProblems();
+        if (isMounted) {
+          setProblems(data);
+        }
+      } catch (error) {
+        if (isMounted) {
+          toast.error(getErrorMessage(error, "Couldn't load problems"));
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProblems();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleDelete = async (id: string, title: string) => {

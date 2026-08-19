@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowLeft, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { adminService } from "../../services/admin.service";
 import type { AdminProblemSummary } from "../../types/admin.types";
+import { TOPICS, DIFFICULTIES } from "../../types/admin.types";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 
 const DIFFICULTY_COLOR: Record<string, string> = {
@@ -12,11 +13,18 @@ const DIFFICULTY_COLOR: Record<string, string> = {
   Hard: "text-red-500 bg-red-500/10",
 };
 
+const PAGE_SIZE = 10;
+
 const AdminProblemsPage = () => {
   const navigate = useNavigate();
   const [problems, setProblems] = useState<AdminProblemSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
+  const [topicFilter, setTopicFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let isMounted = true;
@@ -45,6 +53,38 @@ const AdminProblemsPage = () => {
     };
   }, []);
 
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleDifficultyChange = (value: string) => {
+    setDifficultyFilter(value);
+    setPage(1);
+  };
+
+  const handleTopicChange = (value: string) => {
+    setTopicFilter(value);
+    setPage(1);
+  };
+
+  const filteredProblems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return problems.filter((p) => {
+      const matchesSearch = query === "" || p.title.toLowerCase().includes(query);
+      const matchesDifficulty = difficultyFilter === "all" || p.difficulty === difficultyFilter;
+      const matchesTopic = topicFilter === "all" || p.topic === topicFilter;
+      return matchesSearch && matchesDifficulty && matchesTopic;
+    });
+  }, [problems, search, difficultyFilter, topicFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProblems.length / PAGE_SIZE));
+  const clampedPage = Math.min(page, totalPages);
+  const pagedProblems = filteredProblems.slice(
+    (clampedPage - 1) * PAGE_SIZE,
+    clampedPage * PAGE_SIZE,
+  );
+
   const handleDelete = async (id: string, title: string) => {
     if (!window.confirm(`Delete "${title}"? This can't be undone.`)) return;
 
@@ -59,6 +99,9 @@ const AdminProblemsPage = () => {
       setDeletingId(null);
     }
   };
+
+  const selectClass =
+    "rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-all duration-300 focus:border-[#1a3a5c] focus:ring-2 focus:ring-[#1a3a5c]/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0] dark:focus:ring-[#019bf0]/30";
 
   return (
     <div className="min-h-screen w-full px-4 py-8 dark:bg-[#0e1316] sm:px-6 lg:px-8">
@@ -76,7 +119,7 @@ const AdminProblemsPage = () => {
               Manage Problems
             </h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
-              {problems.length} problem{problems.length === 1 ? "" : "s"} in the bank
+              {filteredProblems.length} of {problems.length} problem{problems.length === 1 ? "" : "s"}
             </p>
           </div>
 
@@ -89,6 +132,41 @@ const AdminProblemsPage = () => {
           </button>
         </div>
 
+        {/* Search + filters */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search by title…"
+              className="w-full rounded-xl border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 outline-none transition-all duration-300 placeholder:text-zinc-400 focus:border-[#1a3a5c] focus:ring-2 focus:ring-[#1a3a5c]/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-600 dark:focus:border-[#019bf0] dark:focus:ring-[#019bf0]/30"
+            />
+          </div>
+
+          <select
+            value={difficultyFilter}
+            onChange={(e) => handleDifficultyChange(e.target.value)}
+            className={selectClass}
+          >
+            <option value="all">All difficulties</option>
+            {DIFFICULTIES.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+
+          <select
+            value={topicFilter}
+            onChange={(e) => handleTopicChange(e.target.value)}
+            className={selectClass}
+          >
+            <option value="all">All topics</option>
+            {TOPICS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
           {loading ? (
             <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
@@ -96,59 +174,92 @@ const AdminProblemsPage = () => {
             <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
               No problems yet — add your first one above.
             </p>
+          ) : filteredProblems.length === 0 ? (
+            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
+              No problems match your search/filters.
+            </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-200 text-xs uppercase tracking-wider text-zinc-400 dark:border-zinc-800">
-                    <th className="px-5 py-3 font-semibold">Title</th>
-                    <th className="px-5 py-3 font-semibold">Difficulty</th>
-                    <th className="px-5 py-3 font-semibold">Topic</th>
-                    <th className="px-5 py-3 font-semibold">Test cases</th>
-                    <th className="px-5 py-3 font-semibold">Added</th>
-                    <th className="px-5 py-3 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {problems.map((problem) => (
-                    <tr key={problem.id} className="text-zinc-700 dark:text-zinc-300">
-                      <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">
-                        {problem.title}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLOR[problem.difficulty]}`}>
-                          {problem.difficulty}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3">{problem.topic}</td>
-                      <td className="px-5 py-3">{problem.testCaseCount}</td>
-                      <td className="px-5 py-3 text-zinc-400">
-                        {new Date(problem.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-5 py-3">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => navigate(`/admin/problems/${problem.id}`)}
-                            className="rounded-lg p-1.5 text-zinc-500 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
-                            aria-label="Edit"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(problem.id, problem.title)}
-                            disabled={deletingId === problem.id}
-                            className="rounded-lg p-1.5 text-zinc-500 transition-all duration-300 hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400"
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-200 text-xs uppercase tracking-wider text-zinc-400 dark:border-zinc-800">
+                      <th className="px-5 py-3 font-semibold">Title</th>
+                      <th className="px-5 py-3 font-semibold">Difficulty</th>
+                      <th className="px-5 py-3 font-semibold">Topic</th>
+                      <th className="px-5 py-3 font-semibold">Test cases</th>
+                      <th className="px-5 py-3 font-semibold">Added</th>
+                      <th className="px-5 py-3 font-semibold text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {pagedProblems.map((problem) => (
+                      <tr key={problem.id} className="text-zinc-700 dark:text-zinc-300">
+                        <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">
+                          {problem.title}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLOR[problem.difficulty]}`}>
+                            {problem.difficulty}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3">{problem.topic}</td>
+                        <td className="px-5 py-3">{problem.testCaseCount}</td>
+                        <td className="px-5 py-3 text-zinc-400">
+                          {new Date(problem.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => navigate(`/admin/problems/${problem.id}`)}
+                              className="rounded-lg p-1.5 text-zinc-500 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+                              aria-label="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(problem.id, problem.title)}
+                              disabled={deletingId === problem.id}
+                              className="rounded-lg p-1.5 text-zinc-500 transition-all duration-300 hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400"
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Page {clampedPage} of {totalPages}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={clampedPage === 1}
+                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-300 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Prev
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={clampedPage === totalPages}
+                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-300 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
+                      Next
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

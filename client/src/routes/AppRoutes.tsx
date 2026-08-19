@@ -17,6 +17,9 @@ import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
 import PageWrapper from "../components/common/PageWrapper";
 import { useAuthStore } from "../store/authStore";
+import AdminRoute from "./AdminRoute";
+import AdminProblemsPage from "../pages/admin/AdminProblemsPage";
+import AdminProblemFormPage from "../pages/admin/AdminProblemFormPage";
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -108,6 +111,34 @@ export default function AppRoutes() {
               }
             />
           </Route>
+
+          <Route element={<AdminRoute />}>
+            <Route
+              path="/admin/problems"
+              element={
+                <PageWrapper>
+                  <AdminProblemsPage />
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/admin/problems/new"
+              element={
+                <PageWrapper>
+                  <AdminProblemFormPage />
+                </PageWrapper>
+              }
+            />
+            <Route
+              path="/admin/problems/:id"
+              element={
+                <PageWrapper>
+                  <AdminProblemFormPage />
+                </PageWrapper>
+              }
+            />
+          </Route>
+          
         </Routes>
       </AnimatePresence>
     </GoogleOAuthProvider>

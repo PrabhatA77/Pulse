@@ -9,8 +9,7 @@ import ActivityGraph from "../components/dashboard/ActivityGraph";
 import RecentInterviews from "../components/dashboard/RecentInterviews";
 import LeetCodeProgressCard from "../components/dashboard/ProgressCard";
 import type { DashboardData } from "../types/dashboard.types";
-import { Sparkles, LogOut,Target, CheckCircle2} from "lucide-react";
-
+import { Sparkles, LogOut, Target, CheckCircle2 } from "lucide-react";
 
 // Add this helper above the DashboardPage component
 function getTimeGreeting(): string {
@@ -66,6 +65,15 @@ const DashboardPage = () => {
             </p>
           </div>
 
+          {user?.role === "admin" && (
+            <button
+              onClick={() => navigate("/admin/problems")}
+              className="group flex items-center justify-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 sm:self-center"
+            >
+              Manage Problems
+            </button>
+          )}
+
           <button
             onClick={handleLogout}
             className="group flex items-center justify-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 sm:self-center"
@@ -80,72 +88,79 @@ const DashboardPage = () => {
         ) : data ? (
           <>
             {(() => {
-  const attempts = data.stats.totalInterviews || 0;
-  const solved = Number(data.stats.totalSolved) || 0;
+              const attempts = data.stats.totalInterviews || 0;
+              const solved = Number(data.stats.totalSolved) || 0;
 
-  // Breakdown by difficulty from recent interviews or stats
-  const easySolved = data.recentInterviews?.filter(
-    (i) => i.difficulty === "Easy" && i.allPassed
-  ).length || 0;
+              // Breakdown by difficulty from recent interviews or stats
+              const easySolved =
+                data.recentInterviews?.filter(
+                  (i) => i.difficulty === "Easy" && i.allPassed,
+                ).length || 0;
 
-  const medSolved = data.recentInterviews?.filter(
-    (i) => i.difficulty === "Medium" && i.allPassed
-  ).length || 0;
+              const medSolved =
+                data.recentInterviews?.filter(
+                  (i) => i.difficulty === "Medium" && i.allPassed,
+                ).length || 0;
 
-  const hardSolved = data.recentInterviews?.filter(
-    (i) => i.difficulty === "Hard" && i.allPassed
-  ).length || 0;
+              const hardSolved =
+                data.recentInterviews?.filter(
+                  (i) => i.difficulty === "Hard" && i.allPassed,
+                ).length || 0;
 
-  return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      {/* 1. Total Attempts */}
-      <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Total Attempts
-          </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#019bf0]/10 text-[#019bf0]">
-            <Target className="h-4.5 w-4.5" />
-          </div>
-        </div>
-        <div className="mt-4 flex items-baseline gap-2">
-          <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-            {attempts}
-          </span>
-          <span className="text-xs font-medium text-zinc-400">sessions</span>
-        </div>
-      </div>
+              return (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                  {/* 1. Total Attempts */}
+                  <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                        Total Attempts
+                      </span>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#019bf0]/10 text-[#019bf0]">
+                        <Target className="h-4.5 w-4.5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+                        {attempts}
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        sessions
+                      </span>
+                    </div>
+                  </div>
 
-      {/* 2. Total Solved */}
-      <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            Total Solved
-          </span>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-            <CheckCircle2 className="h-4.5 w-4.5" />
-          </div>
-        </div>
-        <div className="mt-4 flex items-baseline gap-2">
-          <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-            {solved}
-          </span>
-          <span className="text-xs font-medium text-zinc-400">accepted</span>
-        </div>
-      </div>
+                  {/* 2. Total Solved */}
+                  <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                        Total Solved
+                      </span>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+                        <CheckCircle2 className="h-4.5 w-4.5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+                        {solved}
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400">
+                        accepted
+                      </span>
+                    </div>
+                  </div>
 
-      {/* 3. LeetCode-style Progress Gauge */}
-      <LeetCodeProgressCard
-        easySolved={easySolved}
-        easyTotal={10}
-        mediumSolved={medSolved}
-        mediumTotal={10}
-        hardSolved={hardSolved}
-        hardTotal={10}
-      />
-    </div>
-  );
-})()}
+                  {/* 3. LeetCode-style Progress Gauge */}
+                  <LeetCodeProgressCard
+                    easySolved={easySolved}
+                    easyTotal={10}
+                    mediumSolved={medSolved}
+                    mediumTotal={10}
+                    hardSolved={hardSolved}
+                    hardTotal={10}
+                  />
+                </div>
+              );
+            })()}
 
             <QuickStart />
             <ActivityGraph activityByDay={data.activityByDay} />

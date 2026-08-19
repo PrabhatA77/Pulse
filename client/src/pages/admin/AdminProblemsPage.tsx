@@ -6,11 +6,18 @@ import { adminService } from "../../services/admin.service";
 import type { AdminProblemSummary } from "../../types/admin.types";
 import { TOPICS, DIFFICULTIES } from "../../types/admin.types";
 import { getErrorMessage } from "../../utils/getErrorMessage";
+import { CustomSelect } from "../../components/common/CustomSelect";
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Easy: "text-green-500 bg-green-500/10",
   Medium: "text-yellow-500 bg-yellow-500/10",
   Hard: "text-red-500 bg-red-500/10",
+};
+
+const DIFFICULTY_DOTS: Record<string, string> = {
+  Easy: "bg-green-500",
+  Medium: "bg-amber-500",
+  Hard: "bg-red-500",
 };
 
 const PAGE_SIZE = 10;
@@ -28,26 +35,18 @@ const AdminProblemsPage = () => {
 
   useEffect(() => {
     let isMounted = true;
-
     const fetchProblems = async () => {
       try {
         const { data } = await adminService.listProblems();
-        if (isMounted) {
-          setProblems(data);
-        }
+        if (isMounted) setProblems(data);
       } catch (error) {
-        if (isMounted) {
-          toast.error(getErrorMessage(error, "Couldn't load problems"));
-        }
+        if (isMounted) toast.error(getErrorMessage(error, "Couldn't load problems"));
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchProblems();
-
     return () => {
       isMounted = false;
     };
@@ -55,16 +54,6 @@ const AdminProblemsPage = () => {
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
-    setPage(1);
-  };
-
-  const handleDifficultyChange = (value: string) => {
-    setDifficultyFilter(value);
-    setPage(1);
-  };
-
-  const handleTopicChange = (value: string) => {
-    setTopicFilter(value);
     setPage(1);
   };
 
@@ -82,7 +71,7 @@ const AdminProblemsPage = () => {
   const clampedPage = Math.min(page, totalPages);
   const pagedProblems = filteredProblems.slice(
     (clampedPage - 1) * PAGE_SIZE,
-    clampedPage * PAGE_SIZE,
+    clampedPage * PAGE_SIZE
   );
 
   const handleDelete = async (id: string, title: string) => {
@@ -100,8 +89,19 @@ const AdminProblemsPage = () => {
     }
   };
 
-  const selectClass =
-    "rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-all duration-300 focus:border-[#1a3a5c] focus:ring-2 focus:ring-[#1a3a5c]/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0] dark:focus:ring-[#019bf0]/30";
+  const difficultyOptions = [
+    { value: "all", label: "All difficulties" },
+    ...DIFFICULTIES.map((d) => ({
+      value: d,
+      label: d,
+      dotClass: DIFFICULTY_DOTS[d],
+    })),
+  ];
+
+  const topicOptions = [
+    { value: "all", label: "All topics" },
+    ...TOPICS.map((t) => ({ value: t, label: t })),
+  ];
 
   return (
     <div className="min-h-screen w-full px-4 py-8 dark:bg-[#0e1316] sm:px-6 lg:px-8">
@@ -132,9 +132,9 @@ const AdminProblemsPage = () => {
           </button>
         </div>
 
-        {/* Search + filters */}
+        {/* Search + Animated Dropdowns */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
+          <div className="relative flex-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               value={search}
@@ -144,27 +144,25 @@ const AdminProblemsPage = () => {
             />
           </div>
 
-          <select
+          <CustomSelect
             value={difficultyFilter}
-            onChange={(e) => handleDifficultyChange(e.target.value)}
-            className={selectClass}
-          >
-            <option value="all">All difficulties</option>
-            {DIFFICULTIES.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+            onChange={(val) => {
+              setDifficultyFilter(val);
+              setPage(1);
+            }}
+            options={difficultyOptions}
+            className="sm:w-48"
+          />
 
-          <select
+          <CustomSelect
             value={topicFilter}
-            onChange={(e) => handleTopicChange(e.target.value)}
-            className={selectClass}
-          >
-            <option value="all">All topics</option>
-            {TOPICS.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+            onChange={(val) => {
+              setTopicFilter(val);
+              setPage(1);
+            }}
+            options={topicOptions}
+            className="sm:w-56"
+          />
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
@@ -199,7 +197,9 @@ const AdminProblemsPage = () => {
                           {problem.title}
                         </td>
                         <td className="px-5 py-3">
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLOR[problem.difficulty]}`}>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLOR[problem.difficulty]}`}
+                          >
                             {problem.difficulty}
                           </span>
                         </td>
@@ -233,7 +233,6 @@ const AdminProblemsPage = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-zinc-200 px-5 py-3 dark:border-zinc-800">
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">

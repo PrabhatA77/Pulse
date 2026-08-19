@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Layers, Gauge, Code2 } from "lucide-react";
 
 import { adminService } from "../../services/admin.service";
 import { getErrorMessage } from "../../utils/getErrorMessage";
@@ -15,6 +15,7 @@ import {
   type Difficulty,
   type ProblemFormPayload,
 } from "../../types/admin.types";
+import { CustomSelect } from "../../components/common/CustomSelect";
 
 interface ParamFormState {
   name: string;
@@ -27,6 +28,25 @@ interface TestCaseFormState {
   isHidden: boolean;
   explanation: string;
 }
+
+const TOPIC_BADGES: Record<string, string> = {
+  Arrays: "ARR",
+  Strings: "STR",
+  "Linked List": "LL",
+  "Stacks & Queues": "STK",
+  Trees: "TREE",
+  Graphs: "GRP",
+  "Dynamic Programming": "DP",
+  "Recursion & BackTracking": "REC",
+  "Sorting & Searching": "SRT",
+  Greedy: "GRD",
+};
+
+const DIFFICULTY_DOTS: Record<string, string> = {
+  Easy: "bg-green-500",
+  Medium: "bg-amber-500",
+  Hard: "bg-red-500",
+};
 
 const inputClass =
   "w-full rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-sm text-zinc-900 outline-none transition-all duration-300 focus:border-[#1a3a5c] focus:ring-2 focus:ring-[#1a3a5c]/30 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0] dark:focus:ring-[#019bf0]/30";
@@ -84,7 +104,7 @@ const AdminProblemFormPage = () => {
                 isHidden: tc.isHidden,
                 explanation: tc.explanation ?? "",
               }))
-            : [emptyTestCase()],
+            : [emptyTestCase()]
         );
         setExpectedTimeComplexity(data.expectedTimeComplexity);
         setExpectedSpaceComplexity(data.expectedSpaceComplexity);
@@ -97,21 +117,18 @@ const AdminProblemFormPage = () => {
     })();
   }, [id, navigate]);
 
-  // --- Constraints ---
   const updateConstraint = (i: number, value: string) =>
     setConstraints((prev) => prev.map((c, idx) => (idx === i ? value : c)));
   const addConstraint = () => setConstraints((prev) => [...prev, ""]);
   const removeConstraint = (i: number) =>
     setConstraints((prev) => prev.filter((_, idx) => idx !== i));
 
-  // --- Parameters ---
   const updateParam = (i: number, patch: Partial<ParamFormState>) =>
     setParameters((prev) => prev.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
   const addParam = () => setParameters((prev) => [...prev, emptyParam()]);
   const removeParam = (i: number) =>
     setParameters((prev) => prev.filter((_, idx) => idx !== i));
 
-  // --- Test cases ---
   const updateTestCase = (i: number, patch: Partial<TestCaseFormState>) =>
     setTestCases((prev) => prev.map((tc, idx) => (idx === i ? { ...tc, ...patch } : tc)));
   const addTestCase = () => setTestCases((prev) => [...prev, emptyTestCase()]);
@@ -179,6 +196,23 @@ const AdminProblemFormPage = () => {
     }
   };
 
+  const difficultyOptions = DIFFICULTIES.map((d) => ({
+    value: d as Difficulty,
+    label: d,
+    dotClass: DIFFICULTY_DOTS[d],
+  }));
+
+  const topicOptions = TOPICS.map((t) => ({
+    value: t as Topic,
+    label: t,
+    badge: TOPIC_BADGES[t] ?? "CODE",
+  }));
+
+  const paramTypeOptions = PARAM_TYPES.map((t) => ({
+    value: t as ParamType,
+    label: t,
+  }));
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center dark:bg-[#0e1316]">
@@ -212,26 +246,28 @@ const AdminProblemFormPage = () => {
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelClass}>Title</label>
-                <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+                <input
+                  className={inputClass}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={labelClass}>Difficulty</label>
-                  <select className={inputClass} value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)}>
-                    {DIFFICULTIES.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>Topic</label>
-                  <select className={inputClass} value={topic} onChange={(e) => setTopic(e.target.value as Topic)}>
-                    {TOPICS.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <CustomSelect
+                  label="Difficulty"
+                  icon={<Gauge className="h-3.5 w-3.5" />}
+                  value={difficulty}
+                  onChange={(val) => setDifficulty(val as Difficulty)}
+                  options={difficultyOptions}
+                />
+                <CustomSelect
+                  label="Topic"
+                  icon={<Layers className="h-3.5 w-3.5" />}
+                  value={topic}
+                  onChange={(val) => setTopic(val as Topic)}
+                  options={topicOptions}
+                />
               </div>
 
               <div>
@@ -243,14 +279,24 @@ const AdminProblemFormPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className={labelClass}>Expected time complexity</label>
-                  <input className={inputClass} value={expectedTimeComplexity} onChange={(e) => setExpectedTimeComplexity(e.target.value)} placeholder="O(n)" />
+                  <input
+                    className={inputClass}
+                    value={expectedTimeComplexity}
+                    onChange={(e) => setExpectedTimeComplexity(e.target.value)}
+                    placeholder="O(n)"
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Expected space complexity</label>
-                  <input className={inputClass} value={expectedSpaceComplexity} onChange={(e) => setExpectedSpaceComplexity(e.target.value)} placeholder="O(1)" />
+                  <input
+                    className={inputClass}
+                    value={expectedSpaceComplexity}
+                    onChange={(e) => setExpectedSpaceComplexity(e.target.value)}
+                    placeholder="O(1)"
+                  />
                 </div>
               </div>
             </div>
@@ -259,16 +305,31 @@ const AdminProblemFormPage = () => {
           {/* Constraints */}
           <div className={sectionClass}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Constraints</h2>
-              <button type="button" onClick={addConstraint} className="flex items-center gap-1 text-xs font-semibold text-[#1a3a5c] dark:text-[#019bf0]">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
+                Constraints
+              </h2>
+              <button
+                type="button"
+                onClick={addConstraint}
+                className="flex items-center gap-1 text-xs font-semibold text-[#1a3a5c] dark:text-[#019bf0]"
+              >
                 <Plus className="h-3.5 w-3.5" /> Add
               </button>
             </div>
             <div className="flex flex-col gap-2">
               {constraints.map((c, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <input className={inputClass} value={c} onChange={(e) => updateConstraint(i, e.target.value)} placeholder="1 <= nums.length <= 10^4" />
-                  <button type="button" onClick={() => removeConstraint(i)} className="shrink-0 rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-500">
+                  <input
+                    className={inputClass}
+                    value={c}
+                    onChange={(e) => updateConstraint(i, e.target.value)}
+                    placeholder="1 <= nums.length <= 10^4"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeConstraint(i)}
+                    className="shrink-0 rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-500"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -278,27 +339,37 @@ const AdminProblemFormPage = () => {
 
           {/* Function signature */}
           <div className={sectionClass}>
-            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">Function Signature</h2>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
+              Function Signature
+            </h2>
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className={labelClass}>Function name</label>
-                  <input className={inputClass} value={functionName} onChange={(e) => setFunctionName(e.target.value)} placeholder="twoSum" />
+                  <input
+                    className={inputClass}
+                    value={functionName}
+                    onChange={(e) => setFunctionName(e.target.value)}
+                    placeholder="twoSum"
+                  />
                 </div>
-                <div>
-                  <label className={labelClass}>Return type</label>
-                  <select className={inputClass} value={returnType} onChange={(e) => setReturnType(e.target.value as ParamType)}>
-                    {PARAM_TYPES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
+                <CustomSelect
+                  label="Return type"
+                  icon={<Code2 className="h-3.5 w-3.5" />}
+                  value={returnType}
+                  onChange={(val) => setReturnType(val as ParamType)}
+                  options={paramTypeOptions}
+                />
               </div>
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <label className={labelClass}>Parameters</label>
-                  <button type="button" onClick={addParam} className="flex items-center gap-1 text-xs font-semibold text-[#1a3a5c] dark:text-[#019bf0]">
+                  <button
+                    type="button"
+                    onClick={addParam}
+                    className="flex items-center gap-1 text-xs font-semibold text-[#1a3a5c] dark:text-[#019bf0]"
+                  >
                     <Plus className="h-3.5 w-3.5" /> Add
                   </button>
                 </div>
@@ -309,18 +380,20 @@ const AdminProblemFormPage = () => {
                         className={inputClass}
                         value={p.name}
                         onChange={(e) => updateParam(i, { name: e.target.value })}
-                        placeholder="nums"
+                        placeholder="paramName"
                       />
-                      <select
-                        className={`${inputClass} max-w-32`}
-                        value={p.type}
-                        onChange={(e) => updateParam(i, { type: e.target.value as ParamType })}
+                      <div className="w-36 shrink-0">
+                        <CustomSelect
+                          value={p.type}
+                          onChange={(val) => updateParam(i, { type: val as ParamType })}
+                          options={paramTypeOptions}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeParam(i)}
+                        className="shrink-0 rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-500"
                       >
-                        {PARAM_TYPES.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                      <button type="button" onClick={() => removeParam(i)} className="shrink-0 rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-500">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -333,8 +406,14 @@ const AdminProblemFormPage = () => {
           {/* Test cases */}
           <div className={sectionClass}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Test Cases</h2>
-              <button type="button" onClick={addTestCase} className="flex items-center gap-1 text-xs font-semibold text-[#1a3a5c] dark:text-[#019bf0]">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
+                Test Cases
+              </h2>
+              <button
+                type="button"
+                onClick={addTestCase}
+                className="flex items-center gap-1 text-xs font-semibold text-[#1a3a5c] dark:text-[#019bf0]"
+              >
                 <Plus className="h-3.5 w-3.5" /> Add
               </button>
             </div>
@@ -343,7 +422,11 @@ const AdminProblemFormPage = () => {
                 <div key={i} className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-xs font-semibold text-zinc-500">Test case {i + 1}</span>
-                    <button type="button" onClick={() => removeTestCase(i)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-500/10 hover:text-red-500">
+                    <button
+                      type="button"
+                      onClick={() => removeTestCase(i)}
+                      className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-500/10 hover:text-red-500"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

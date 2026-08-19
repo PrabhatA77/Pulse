@@ -9,9 +9,8 @@ import ActivityGraph from "../components/dashboard/ActivityGraph";
 import RecentInterviews from "../components/dashboard/RecentInterviews";
 import LeetCodeProgressCard from "../components/dashboard/ProgressCard";
 import type { DashboardData } from "../types/dashboard.types";
-import { Sparkles, LogOut, Target, CheckCircle2 } from "lucide-react";
+import { Sparkles, LogOut, Target, CheckCircle2, ArrowLeft } from "lucide-react";
 
-// Add this helper above the DashboardPage component
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -48,12 +47,22 @@ const DashboardPage = () => {
       <div className="mx-auto flex max-w-5xl flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            {/* Inline Back Button & Greeting Badge */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 transition-all duration-300 hover:text-[#1a3a5c] dark:text-zinc-400 dark:hover:text-[#019bf0]"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to home
+              </button>
+
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#019bf0]/20 bg-[#019bf0]/10 px-2.5 py-0.5 text-xs font-semibold text-[#019bf0]">
                 <Sparkles className="h-3 w-3" />
                 {getTimeGreeting()}
               </span>
             </div>
+
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
               Welcome back,{" "}
               <span className="bg-linear-to-r from-[#1a3a5c] via-[#019bf0] to-[#019bf0] bg-clip-text text-transparent dark:from-white dark:via-[#019bf0] dark:to-[#019bf0]">
@@ -65,22 +74,24 @@ const DashboardPage = () => {
             </p>
           </div>
 
-          {user?.role === "admin" && (
-            <button
-              onClick={() => navigate("/admin/problems")}
-              className="group flex items-center justify-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 sm:self-center"
-            >
-              Manage Problems
-            </button>
-          )}
+          <div className="flex items-center gap-2.5 self-start sm:self-center">
+            {user?.role === "admin" && (
+              <button
+                onClick={() => navigate("/admin/problems")}
+                className="group flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80"
+              >
+                Manage Problems
+              </button>
+            )}
 
-          <button
-            onClick={handleLogout}
-            className="group flex items-center justify-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 sm:self-center"
-          >
-            <LogOut className="h-4 w-4 text-zinc-400 transition-transform duration-200 group-hover:-translate-x-0.5" />
-            <span>Logout</span>
-          </button>
+            <button
+              onClick={handleLogout}
+              className="group flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80"
+            >
+              <LogOut className="h-4 w-4 text-zinc-400 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -91,7 +102,6 @@ const DashboardPage = () => {
               const attempts = data.stats.totalInterviews || 0;
               const solved = Number(data.stats.totalSolved) || 0;
 
-              // Breakdown by difficulty from recent interviews or stats
               const easySolved =
                 data.recentInterviews?.filter(
                   (i) => i.difficulty === "Easy" && i.allPassed,
@@ -109,7 +119,7 @@ const DashboardPage = () => {
 
               return (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                  {/* 1. Total Attempts */}
+                  {/* Total Attempts */}
                   <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
@@ -129,7 +139,7 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  {/* 2. Total Solved */}
+                  {/* Total Solved */}
                   <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
@@ -149,7 +159,7 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  {/* 3. LeetCode-style Progress Gauge */}
+                  {/* LeetCode-style Progress Gauge */}
                   <LeetCodeProgressCard
                     easySolved={easySolved}
                     easyTotal={10}

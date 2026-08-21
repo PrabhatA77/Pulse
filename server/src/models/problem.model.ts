@@ -1,20 +1,21 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export const TOPICS = [
-  "Arrays",
-  "Strings",
-  "Linked List",
-  "Stacks & Queues",
-  "Trees",
-  "Graphs",
-  "Dynamic Programming",
-  "Recursion & Backtracking",
-  "Sorting & Searching",
-  "Greedy",
-  "Binary Search",
-] as const;
+// export const TOPICS = [
+//   "Arrays",
+//   "Strings",
+//   "Linked List",
+//   "Stacks & Queues",
+//   "Trees",
+//   "Graphs",
+//   "Dynamic Programming",
+//   "Recursion & Backtracking",
+//   "Sorting & Searching",
+//   "Greedy",
+//   "Binary Search",
+// ] as const;
 
-export type Topic = (typeof TOPICS)[number];
+// export type Topic = (typeof TOPICS)[number];
+
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export const PARAM_TYPES = [
@@ -52,7 +53,7 @@ export interface TestCase {
 export interface ProblemDocument extends Document {
   title: string;
   difficulty: Difficulty;
-  topic: Topic;
+  topic: string;
   description: string;
   constraints: string[];
 
@@ -93,7 +94,7 @@ const problemSchema = new Schema<ProblemDocument>(
       enum: ["Easy", "Medium", "Hard"],
       required: true,
     },
-    topic: { type: String, enum: TOPICS, required: true },
+    topic: { type: String, trim:true, required: true },
     description: { type: String, required: true },
     constraints: { type: [String], default: [] },
     functionName: { type: String, required: true, trim: true },

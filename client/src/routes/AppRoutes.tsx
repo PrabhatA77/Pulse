@@ -20,6 +20,7 @@ import { useAuthStore } from "../store/authStore";
 import AdminRoute from "./AdminRoute";
 import AdminProblemsPage from "../pages/admin/AdminProblemsPage";
 import AdminProblemFormPage from "../pages/admin/AdminProblemFormPage";
+import AdminTopicsPage from "../pages/admin/AdminTopicPage";
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -137,8 +138,16 @@ export default function AppRoutes() {
                 </PageWrapper>
               }
             />
+
+            <Route
+              path="/admin/topics"
+              element={
+                <PageWrapper>
+                  <AdminTopicsPage />
+                </PageWrapper>
+              }
+            />
           </Route>
-          
         </Routes>
       </AnimatePresence>
     </GoogleOAuthProvider>

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { TOPICS, PARAM_TYPES } from "../models/problem.model.js";
+import { PARAM_TYPES } from "../models/problem.model.js";
 
 const paramTypeEnum = z.enum(PARAM_TYPES);
 const difficultyEnum = z.enum(["Easy", "Medium", "Hard"]);
-const topicEnum = z.enum(TOPICS);
+const topicEnum = z.string().trim().min(1, "Topic is required")
 
 const functionParamSchema = z.object({
   name: z.string().trim().min(1, "Parameter name is required"),

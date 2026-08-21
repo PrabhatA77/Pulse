@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Plus, Pencil, Trash2, ArrowLeft, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowLeft,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { adminService } from "../../services/admin.service";
 import type { AdminProblemSummary } from "../../types/admin.types";
-import { TOPICS, DIFFICULTIES } from "../../types/admin.types";
+import { DIFFICULTIES } from "../../types/admin.types";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import { CustomSelect } from "../../components/common/CustomSelect";
 
@@ -40,7 +48,8 @@ const AdminProblemsPage = () => {
         const { data } = await adminService.listProblems();
         if (isMounted) setProblems(data);
       } catch (error) {
-        if (isMounted) toast.error(getErrorMessage(error, "Couldn't load problems"));
+        if (isMounted)
+          toast.error(getErrorMessage(error, "Couldn't load problems"));
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -60,18 +69,23 @@ const AdminProblemsPage = () => {
   const filteredProblems = useMemo(() => {
     const query = search.trim().toLowerCase();
     return problems.filter((p) => {
-      const matchesSearch = query === "" || p.title.toLowerCase().includes(query);
-      const matchesDifficulty = difficultyFilter === "all" || p.difficulty === difficultyFilter;
+      const matchesSearch =
+        query === "" || p.title.toLowerCase().includes(query);
+      const matchesDifficulty =
+        difficultyFilter === "all" || p.difficulty === difficultyFilter;
       const matchesTopic = topicFilter === "all" || p.topic === topicFilter;
       return matchesSearch && matchesDifficulty && matchesTopic;
     });
   }, [problems, search, difficultyFilter, topicFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProblems.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProblems.length / PAGE_SIZE),
+  );
   const clampedPage = Math.min(page, totalPages);
   const pagedProblems = filteredProblems.slice(
     (clampedPage - 1) * PAGE_SIZE,
-    clampedPage * PAGE_SIZE
+    clampedPage * PAGE_SIZE,
   );
 
   const handleDelete = async (id: string, title: string) => {
@@ -98,10 +112,15 @@ const AdminProblemsPage = () => {
     })),
   ];
 
-  const topicOptions = [
-    { value: "all", label: "All topics" },
-    ...TOPICS.map((t) => ({ value: t, label: t })),
-  ];
+  const topicOptions = useMemo(() => {
+    const uniqueTopics = Array.from(
+      new Set(problems.map((p) => p.topic)),
+    ).sort();
+    return [
+      { value: "all", label: "All topics" },
+      ...uniqueTopics.map((t) => ({ value: t, label: t })),
+    ];
+  }, [problems]);
 
   return (
     <div className="min-h-screen w-full px-4 py-8 dark:bg-[#0e1316] sm:px-6 lg:px-8">
@@ -119,7 +138,8 @@ const AdminProblemsPage = () => {
               Manage Problems
             </h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
-              {filteredProblems.length} of {problems.length} problem{problems.length === 1 ? "" : "s"}
+              {filteredProblems.length} of {problems.length} problem
+              {problems.length === 1 ? "" : "s"}
             </p>
           </div>
 
@@ -129,6 +149,13 @@ const AdminProblemsPage = () => {
           >
             <Plus className="h-4 w-4" />
             Add problem
+          </button>
+
+          <button
+            onClick={() => navigate("/admin/topics")}
+            className="flex items-center justify-center gap-2 self-start rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80"
+          >
+            Manage Topics
           </button>
         </div>
 
@@ -167,7 +194,9 @@ const AdminProblemsPage = () => {
 
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
           {loading ? (
-            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
+              Loading…
+            </p>
           ) : problems.length === 0 ? (
             <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
               No problems yet — add your first one above.
@@ -187,12 +216,17 @@ const AdminProblemsPage = () => {
                       <th className="px-5 py-3 font-semibold">Topic</th>
                       <th className="px-5 py-3 font-semibold">Test cases</th>
                       <th className="px-5 py-3 font-semibold">Added</th>
-                      <th className="px-5 py-3 font-semibold text-right">Actions</th>
+                      <th className="px-5 py-3 font-semibold text-right">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {pagedProblems.map((problem) => (
-                      <tr key={problem.id} className="text-zinc-700 dark:text-zinc-300">
+                      <tr
+                        key={problem.id}
+                        className="text-zinc-700 dark:text-zinc-300"
+                      >
                         <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">
                           {problem.title}
                         </td>
@@ -211,14 +245,18 @@ const AdminProblemsPage = () => {
                         <td className="px-5 py-3">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => navigate(`/admin/problems/${problem.id}`)}
+                              onClick={() =>
+                                navigate(`/admin/problems/${problem.id}`)
+                              }
                               className="rounded-lg p-1.5 text-zinc-500 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
                               aria-label="Edit"
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(problem.id, problem.title)}
+                              onClick={() =>
+                                handleDelete(problem.id, problem.title)
+                              }
                               disabled={deletingId === problem.id}
                               className="rounded-lg p-1.5 text-zinc-500 transition-all duration-300 hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400"
                               aria-label="Delete"
@@ -248,7 +286,9 @@ const AdminProblemsPage = () => {
                       Prev
                     </button>
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={clampedPage === totalPages}
                       className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-300 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     >

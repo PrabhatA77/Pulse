@@ -1,5 +1,5 @@
 import api from "../api/axios";
-import type { AdminProblemSummary, AdminProblemDetail, ProblemFormPayload } from "../types/admin.types";
+import type { AdminProblemSummary, AdminProblemDetail, ProblemFormPayload, AdminTopic } from "../types/admin.types";
 
 export const adminService = {
   listProblems: () => api.get<AdminProblemSummary[]>("/admin/problems"),
@@ -13,4 +13,8 @@ export const adminService = {
     api.put<AdminProblemDetail>(`/admin/problems/${id}`, data),
 
   deleteProblem: (id: string) => api.delete(`/admin/problems/${id}`),
+
+  listTopics: () => api.get<AdminTopic[]>("/admin/topics"),
+  createTopic: (name: string) => api.post<AdminTopic>("/admin/topics", { name }),
+  deleteTopic: (id: string) => api.delete(`/admin/topics/${id}`),
 };

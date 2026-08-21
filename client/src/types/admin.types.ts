@@ -1,17 +1,22 @@
-export const TOPICS = [
-  "Arrays",
-  "Strings",
-  "Linked List",
-  "Stacks & Queues",
-  "Trees",
-  "Graphs",
-  "Dynamic Programming",
-  "Recursion & Backtracking",
-  "Sorting & Searching",
-  "Greedy",
-  "Binary Search",
-] as const;
-export type Topic = (typeof TOPICS)[number];
+// export const TOPICS = [
+//   "Arrays",
+//   "Strings",
+//   "Linked List",
+//   "Stacks & Queues",
+//   "Trees",
+//   "Graphs",
+//   "Dynamic Programming",
+//   "Recursion & Backtracking",
+//   "Sorting & Searching",
+//   "Greedy",
+//   "Binary Search",
+// ] as const;
+// export type Topic = (typeof TOPICS)[number];
+
+export interface AdminTopic {
+  id: string;
+  name: string;
+}
 
 export const PARAM_TYPES = [
   "int",
@@ -45,7 +50,7 @@ export interface AdminProblemSummary {
   id: string;
   title: string;
   difficulty: Difficulty;
-  topic: Topic;
+  topic: string;
   testCaseCount: number;
   createdAt: string;
 }
@@ -55,7 +60,7 @@ export interface AdminProblemDetail {
   id: string;
   title: string;
   difficulty: Difficulty;
-  topic: Topic;
+  topic: string;
   description: string;
   constraints: string[];
   functionName: string;
@@ -72,7 +77,7 @@ export interface AdminProblemDetail {
 export interface ProblemFormPayload {
   title: string;
   difficulty: Difficulty;
-  topic: Topic;
+  topic: string;
   description: string;
   constraints: string[];
   functionName: string;

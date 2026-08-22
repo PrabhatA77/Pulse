@@ -2,6 +2,9 @@ import type { Response, Request } from "express";
 import { Types } from "mongoose";
 import { Interview } from "../models/interview.model.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { Problem } from "../models/problem.model.js";
+
+const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 
 interface AuthedRequest extends Request {
   userId?: string;
@@ -42,31 +45,69 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
   const userId = new Types.ObjectId(req.userId);
   const windowStart = new Date(Date.now() - ACTIVITY_WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
-  const [totalInterviews, solvedAgg, recent, activityAgg] = await Promise.all([
-    Interview.countDocuments({ user: userId }),
+  const [totalInterviews, recent, activityAgg, solvedByDifficultyAgg, totalByDifficultyAgg] =
+    await Promise.all([
+      Interview.countDocuments({ user: userId }),
 
-    Interview.aggregate<{ _id: null; count: number }>([
-      { $match: { user: userId, allPassed: true } },
-      { $count: "count" },
-    ]),
+      Interview.find({ user: userId })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .populate("problem", "title topic difficulty")
+        .lean<LeanInterview[]>(),
 
-    Interview.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .populate("problem", "title topic difficulty")
-      .lean<LeanInterview[]>(),
+      Interview.aggregate<{ _id: string; count: number }>([
+        { $match: { user: userId, createdAt: { $gte: windowStart } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
 
-    Interview.aggregate<{ _id: string; count: number }>([
-      { $match: { user: userId, createdAt: { $gte: windowStart } } },
-      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { _id: 1 } },
-    ]),
-  ]);
+      // Unique problems this user has ever solved correctly (all test
+      // cases passed on at least one submission), grouped by the
+      // problem's difficulty. Grouping on `problem` FIRST is what
+      // collapses repeat solves/resubmissions of the same problem down
+      // to a single count — solving "Two Sum" 5 times still counts once.
+      Interview.aggregate<{ _id: string; count: number }>([
+        { $match: { user: userId, allPassed: true } },
+        { $group: { _id: "$problem" } },
+        {
+          $lookup: {
+            from: "problems",
+            localField: "_id",
+            foreignField: "_id",
+            as: "problem",
+          },
+        },
+        { $unwind: "$problem" },
+        { $group: { _id: "$problem.difficulty", count: { $sum: 1 } } },
+      ]),
+
+      // Total problems that exist per difficulty — independent of the
+      // user, this is the denominator for the progress gauge. Replaces
+      // the previous hardcoded easyTotal={10}/mediumTotal={10}/etc.
+      Problem.aggregate<{ _id: string; count: number }>([
+        { $group: { _id: "$difficulty", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+  const solvedMap = Object.fromEntries(solvedByDifficultyAgg.map((d) => [d._id, d.count]));
+  const totalMap = Object.fromEntries(totalByDifficultyAgg.map((d) => [d._id, d.count]));
+  const totalSolved = DIFFICULTIES.reduce((sum, d) => sum + (solvedMap[d] ?? 0), 0);
 
   res.status(200).json({
     stats: {
       totalInterviews,
-      totalSolved: solvedAgg[0]?.count ?? 0,
+      // Unique problems solved, not total accepted submissions — was
+      // previously counting every allPassed interview, which double
+      // counted repeat solves the same way the frontend bug did.
+      totalSolved,
+    },
+    progress: {
+      easySolved: solvedMap["Easy"] ?? 0,
+      easyTotal: totalMap["Easy"] ?? 0,
+      mediumSolved: solvedMap["Medium"] ?? 0,
+      mediumTotal: totalMap["Medium"] ?? 0,
+      hardSolved: solvedMap["Hard"] ?? 0,
+      hardTotal: totalMap["Hard"] ?? 0,
     },
     recentInterviews: recent.map((interview) => ({
       id: interview._id.toString(),

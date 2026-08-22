@@ -7,7 +7,11 @@ export interface IUser extends Document {
   password?: string;
   authProvider: "local" | "google";
   googleId?: string;
-  role:"user"|"admin";
+  role: "user" | "admin";
+
+  fullName?: string;
+  bio?: string;
+  avatarUrl?: string;
 
   isVerified: boolean;
   otp?: string | undefined;
@@ -46,10 +50,23 @@ const userSchema = new Schema<IUser>(
     googleId: {
       type: String,
     },
-    role:{
-      type:String,
-      enum:["user","admin"],
-      default:"user",
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    fullName: {
+      type: String,
+      trim: true,
+      maxlength: 60,
+    },
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+    },
+    avatarUrl: {
+      type: String,
     },
     isVerified: {
       type: Boolean,

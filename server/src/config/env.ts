@@ -21,4 +21,7 @@ export const env = {
   emailFrom: required("EMAIL_FROM"),
   geminiApiKey:required("GEMINI_API_KEY"),
   openaiApiKey:required("OPENAI_API_KEY"),
+  cloudinaryCloudName: required("CLOUDINARY_CLOUD_NAME"),
+  cloudinaryApiKey: required("CLOUDINARY_API_KEY"),
+  cloudinaryApiSecret: required("CLOUDINARY_API_SECRET"),
 };

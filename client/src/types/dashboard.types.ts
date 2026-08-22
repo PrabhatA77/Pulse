@@ -25,6 +25,16 @@ export interface RecentInterview {
 
 export interface DashboardData {
   stats: DashboardStats;
+  progress: DifficultyProgress;
   activityByDay: ActivityDay[];
   recentInterviews: RecentInterview[];
+}
+
+export interface DifficultyProgress {
+  easySolved: number;
+  easyTotal: number;
+  mediumSolved: number;
+  mediumTotal: number;
+  hardSolved: number;
+  hardTotal: number;
 }

@@ -29,6 +29,7 @@ const InterviewWorkspace = () => {
   const [searchParams] = useSearchParams();
   const topic = searchParams.get("topic") ?? undefined;
   const difficulty = searchParams.get("difficulty") ?? undefined;
+  const problemId = searchParams.get("problemId") ?? undefined;
 
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,7 +55,9 @@ const InterviewWorkspace = () => {
       setSubmitResult(null);
       setFeedback(null);
       try {
-        const { data } = await problemService.getRandom(topic, difficulty);
+        const { data } = problemId
+          ? await problemService.getById(problemId)
+          : await problemService.getRandom(topic, difficulty);
 
         if (cancelled) return;
         setProblem(data);
@@ -73,7 +76,12 @@ const InterviewWorkspace = () => {
         setDefaultCodeByLanguage(initialCode);
       } catch (error) {
         if (!cancelled)
-          toast.error(getErrorMessage(error, "Couldn't load a problem"));
+          toast.error(
+            getErrorMessage(
+              error,
+              problemId ? "Couldn't load that problem" : "Couldn't load a problem",
+            ),
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -81,7 +89,7 @@ const InterviewWorkspace = () => {
     return () => {
       cancelled = true;
     };
-  }, [topic, difficulty]);
+  }, [problemId, topic, difficulty]);
 
   const code = codeByLanguage[language] ?? "";
 

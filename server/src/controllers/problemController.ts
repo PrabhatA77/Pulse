@@ -2,6 +2,7 @@ import type { Request,Response } from "express";
 import { Problem } from "../models/problem.model.js";
 import type { ProblemDocument } from "../models/problem.model.js";
 import { AppError } from "../middleware/errorHandler.js";
+import { Topic } from "../models/topic.model.js";
 
 function toPublicProblem(problem:ProblemDocument){
     return {
@@ -53,4 +54,24 @@ export async function getRandomProblem(req:Request<{},{},{},RandomProblemQuery>,
     }
 
     res.status(200).json(toPublicProblem(Problem.hydrate(randomDoc)));
+}
+
+export async function getTopics(_req: Request, res: Response) {
+  const topics = await Topic.find().sort({ name: 1 });
+  res.status(200).json(topics.map((t) => ({ id: t._id, name: t.name })));
+}
+
+export async function listPublicProblems(_req: Request, res: Response) {
+  const problems = await Problem.find()
+    .select("title difficulty topic")
+    .sort({ title: 1 });
+
+  res.status(200).json(
+    problems.map((p) => ({
+      id: p._id,
+      title: p.title,
+      difficulty: p.difficulty,
+      topic: p.topic,
+    })),
+  );
 }

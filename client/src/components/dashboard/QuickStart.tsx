@@ -3,41 +3,47 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, Sparkles, Layers, Gauge } from "lucide-react";
 
-const TOPICS = [
-  "Arrays",
-  "Strings",
-  "Linked List",
-  "Stacks & Queues",
-  "Trees",
-  "Graphs",
-  "Dynamic Programming",
-  "Recursion & BackTracking",
-  "Sorting & Searching",
-  "Greedy",
-];
+import toast from "react-hot-toast";
+import { problemService } from "../../services/problem.service";
+import { getErrorMessage } from "../../utils/getErrorMessage";
+
+// const TOPICS = [
+//   "Arrays",
+//   "Strings",
+//   "Linked List",
+//   "Stacks & Queues",
+//   "Trees",
+//   "Graphs",
+//   "Dynamic Programming",
+//   "Recursion & BackTracking",
+//   "Sorting & Searching",
+//   "Greedy",
+// ];
 
 const TOPIC_BADGES: Record<string, string> = {
-  "Arrays": "ARR",
-  "Strings": "STR",
+  Arrays: "ARR",
+  Strings: "STR",
   "Linked List": "LL",
   "Stacks & Queues": "STK",
-  "Trees": "TREE",
-  "Graphs": "GRP",
+  Trees: "TREE",
+  Graphs: "GRP",
   "Dynamic Programming": "DP",
   "Recursion & BackTracking": "REC",
   "Sorting & Searching": "SRT",
-  "Greedy": "GRD",
+  Greedy: "GRD",
 };
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 
 const DIFFICULTY_STYLES: Record<string, { badge: string; dot: string }> = {
   Easy: {
-    badge: "text-green-600 bg-green-500/10 border-green-500/20 dark:text-green-400",
+    badge:
+      "text-green-600 bg-green-500/10 border-green-500/20 dark:text-green-400",
     dot: "bg-green-500",
   },
   Medium: {
-    badge: "text-amber-600 bg-amber-500/10 border-amber-500/20 dark:text-amber-400",
+    badge:
+      "text-amber-600 bg-amber-500/10 border-amber-500/20 dark:text-amber-400",
     dot: "bg-amber-500",
   },
   Hard: {
@@ -48,7 +54,9 @@ const DIFFICULTY_STYLES: Record<string, { badge: string; dot: string }> = {
 
 const QuickStart = () => {
   const navigate = useNavigate();
-  const [topic, setTopic] = useState(TOPICS[0]);
+  const [topics, setTopics] = useState<string[]>([]);
+  const [topicsLoading, setTopicsLoading] = useState(true);
+  const [topic, setTopic] = useState("");
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[0]);
 
   const [topicOpen, setTopicOpen] = useState(false);
@@ -73,23 +81,50 @@ const QuickStart = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await problemService.getTopics();
+        setTopics(data.map((t) => t.name));
+        if (data.length > 0) setTopic(data[0].name);
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Couldn't load topics"));
+      } finally {
+        setTopicsLoading(false);
+      }
+    })();
+  }, []);
+
   const handleStart = () => {
     navigate(
-      `/interview?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}`
+      `/interview?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}`,
     );
   };
 
   return (
     <div className="relative rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-[#019bf0]" />
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-          Quick Start
-        </h2>
+      {/* Header with Title and Button */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[#019bf0]" />
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+              Quick Start
+            </h2>
+          </div>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Jump straight into a problem-solving session.
+          </p>
+        </div>
+
+        {/* Top Right Button */}
+        <button
+          onClick={() => navigate("/problems")}
+          className="group hidden sm:flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80"
+        >
+          Browse Problems
+        </button>
       </div>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-        Jump directly into a mock interview session.
-      </p>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Topic Selector */}
@@ -105,13 +140,16 @@ const QuickStart = () => {
               setDiffOpen(false);
             }}
             aria-expanded={topicOpen}
-            className="group flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-100 hover:shadow focus:outline-none focus:ring-2 focus:ring-[#019bf0]/30 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
+            disabled={topicsLoading || topics.length === 0}
+            className="group flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-100 hover:shadow focus:outline-none focus:ring-2 focus:ring-[#019bf0]/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
           >
             <div className="flex items-center gap-2.5 truncate">
               <span className="flex h-6 min-w-7 items-center justify-center rounded-md bg-zinc-200 px-1.5 text-[10px] font-bold text-zinc-700 transition-transform duration-200 group-hover:scale-105 dark:bg-zinc-700 dark:text-zinc-200">
                 {TOPIC_BADGES[topic] ?? "CODE"}
               </span>
-              <span className="truncate">{topic}</span>
+              <span className="truncate">
+                {topicsLoading ? "Loading…" : topic || "No topics yet"}
+              </span>
             </div>
 
             <ChevronDown
@@ -137,7 +175,7 @@ const QuickStart = () => {
                   </p>
                 </div>
 
-                {TOPICS.map((item) => {
+                {topics.map((item) => {
                   const selected = item === topic;
                   return (
                     <motion.button
@@ -279,9 +317,10 @@ const QuickStart = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleStart}
-            className="flex h-10.5 w-full items-center justify-center rounded-xl bg-[#1a3a5c] px-6 text-sm font-semibold uppercase tracking-wide text-white shadow transition-all duration-300 hover:opacity-90 dark:bg-[#019bf0] sm:w-auto"
+            disabled={!topic}
+            className="flex h-10.5 w-full items-center justify-center rounded-xl bg-[#1a3a5c] px-6 text-sm font-semibold uppercase tracking-wide text-white shadow transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#019bf0] sm:w-auto"
           >
-            Start Interview
+            Start Coding
           </motion.button>
         </div>
       </div>

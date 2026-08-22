@@ -25,6 +25,7 @@ import {
   type ForgotPasswordInput,
   type ResetPasswordInput,
 } from "../validators/auth.validator.js";
+import { toPublicUser } from "../utils/publicUser.util.js";
 
 const googleClient = new OAuth2Client(env.googleClientId);
 
@@ -36,10 +37,6 @@ async function generateUniqueUsername(base: string): Promise<string> {
     username = `${base}${suffix}`;
   }
   return username;
-}
-
-function publicUser(user: any) {
-  return { id: user.id, username: user.username, email: user.email,role:user.role};
 }
 
 export async function signup(req: Request<{}, {}, SignupInput>, res: Response) {
@@ -107,7 +104,7 @@ export async function verifyOtp(
   res.status(200).json({
     success: true,
     message: "Email verified successfully",
-    user: publicUser(user),
+    user: toPublicUser(user),
   });
 }
 
@@ -154,7 +151,7 @@ export async function login(req:Request<{},{},LoginInput>,res:Response){
     res.status(200).json({
         success:true,
         message:"Login Successful",
-        user:publicUser(user)
+        user:toPublicUser(user)
     });
 }
 
@@ -187,7 +184,7 @@ export async function googleLogin(req: Request<{}, {}, GoogleAuthInput>, res: Re
   const token = generateToken(user._id.toString());
   setAuthCookie(res, token);
 
-  res.status(200).json({ message: "Login successful", user: publicUser(user) });
+  res.status(200).json({ message: "Login successful", user: toPublicUser(user) });
 }
 
 export async function forgotPassword(req: Request<{}, {}, ForgotPasswordInput>, res: Response) {
@@ -237,5 +234,5 @@ export function logout(_req: Request, res: Response) {
 export async function getMe(req: AuthRequest, res: Response) {
   const user = await User.findById(req.userId);
   if (!user) throw new AppError("User not found", 404);
-  res.status(200).json({ user: publicUser(user) });
+  res.status(200).json({ user: toPublicUser(user) });
 }

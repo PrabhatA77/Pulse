@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { authService } from "../services/auth.service";
+import { profileService } from "../services/profile.service";
 import type { User } from "../types/auth.types";
 
 interface AuthState {
@@ -24,6 +25,11 @@ interface AuthState {
     newPassword: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
+
+  updateProfile: (fullName: string, bio: string) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<void>;
+  removeAvatar: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -75,5 +81,24 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await authService.logout();
     set({ user: null, isAuthenticated: false });
+  },
+
+  updateProfile: async (fullName, bio) => {
+    const res = await profileService.update({ fullName, bio });
+    set({ user: res.data.user });
+  },
+
+  uploadAvatar: async (file) => {
+    const res = await profileService.uploadAvatar(file);
+    set({ user: res.data.user });
+  },
+
+  removeAvatar: async () => {
+    const res = await profileService.removeAvatar();
+    set({ user: res.data.user });
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    await profileService.changePassword(currentPassword, newPassword);
   },
 }));

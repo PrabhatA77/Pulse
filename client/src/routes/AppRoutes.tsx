@@ -21,6 +21,8 @@ import AdminRoute from "./AdminRoute";
 import AdminProblemsPage from "../pages/admin/AdminProblemsPage";
 import AdminProblemFormPage from "../pages/admin/AdminProblemFormPage";
 import AdminTopicsPage from "../pages/admin/AdminTopicPage";
+import ProblemsPage from "../pages/ProblemsPage";
+import ProfilePage from "../pages/ProfilePage";
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -108,6 +110,24 @@ export default function AppRoutes() {
               element={
                 <PageWrapper>
                   <InterviewWorkspace />
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/problems"
+              element={
+                <PageWrapper>
+                  <ProblemsPage />
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <PageWrapper>
+                  <ProfilePage />
                 </PageWrapper>
               }
             />

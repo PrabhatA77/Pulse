@@ -1,15 +1,15 @@
 import logo from "../../assets/logo.png";
 import { useState } from "react";
 import { Sun, Moon, Menu, X } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
+import ProfileDropdown from "./ProfileDropdown";
 
 const NAV_LINK_CLASS =
   "transition-all duration-300 hover:text-[#1a3a5c] dark:hover:text-[#019bf0] py-1 px-2 rounded-2xl hover:bg-gray-300 dark:hover:bg-gray-800 dark:text-gray-300";
 
 const Navbar = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark"),
@@ -20,12 +20,6 @@ const Navbar = () => {
     const isDark = document.documentElement.classList.toggle("dark");
     localStorage.setItem("theme", isDark ? "dark" : "light");
     setIsDark(isDark);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    setMenuOpen(false);
-    navigate("/");
   };
 
   return (
@@ -53,41 +47,32 @@ const Navbar = () => {
             className="transition-all duration-300 dark:text-white"
             onClick={toggleTheme}
           >
-            {!isDark ? (
-              <Moon className="transition-all duration-300 cursor-pointer w-5 h-5 rounded-full" />
-            ) : (
-              <Sun className="transition-all duration-300 cursor-pointer w-5 h-5 rounded-full" />
-            )}
+            {!isDark ? <Moon className="..." /> : <Sun className="..." />}
           </button>
 
-          <div className="hidden items-center gap-3 md:flex">
-            {isAuthenticated ? (
-              <>
-                <Link to="/dashboard" className={NAV_LINK_CLASS}>
-                  Dashboard
-                </Link>
-                <button className={NAV_LINK_CLASS} onClick={handleLogout}>
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/signup" className={NAV_LINK_CLASS}>
-                  Signup
-                </Link>
-                <Link to="/login" className={NAV_LINK_CLASS}>
-                  Login
-                </Link>
-              </>
-            )}
-          </div>
+          {isAuthenticated ? (
+            <ProfileDropdown />
+          ) : (
+            <div className="hidden items-center gap-3 md:flex">
+              <Link to="/signup" className={NAV_LINK_CLASS}>
+                Signup
+              </Link>
+              <Link to="/login" className={NAV_LINK_CLASS}>
+                Login
+              </Link>
+            </div>
+          )}
 
           <button
             className="dark:text-white md:hidden"
             onClick={() => setMenuOpen((open) => !open)}
             aria-label="Toggle menu"
           >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {menuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
@@ -102,21 +87,20 @@ const Navbar = () => {
           <div className="mx-auto flex max-w-7xl flex-col gap-1 border-t border-gray-300 px-4 pb-4 pt-2 dark:border-gray-800 sm:px-6 lg:px-8">
             <div className={NAV_LINK_CLASS}>Product</div>
             <div className={NAV_LINK_CLASS}>Features</div>
-            {isAuthenticated ? (
+            {!isAuthenticated && (
               <>
-                <Link to="/dashboard" className={NAV_LINK_CLASS} onClick={() => setMenuOpen(false)}>
-                  Dashboard
-                </Link>
-                <button className={`${NAV_LINK_CLASS} text-left`} onClick={handleLogout}>
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/signup" className={NAV_LINK_CLASS} onClick={() => setMenuOpen(false)}>
+                <Link
+                  to="/signup"
+                  className={NAV_LINK_CLASS}
+                  onClick={() => setMenuOpen(false)}
+                >
                   Signup
                 </Link>
-                <Link to="/login" className={NAV_LINK_CLASS} onClick={() => setMenuOpen(false)}>
+                <Link
+                  to="/login"
+                  className={NAV_LINK_CLASS}
+                  onClick={() => setMenuOpen(false)}
+                >
                   Login
                 </Link>
               </>

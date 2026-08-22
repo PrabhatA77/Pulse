@@ -60,3 +60,15 @@ export interface SubmitResult {
 export interface AnalyzeResult {
   feedback: InterviewFeedback;
 }
+
+export interface ProblemTopic {
+  id: string;
+  name: string;
+}
+
+export interface ProblemSummary {
+  id: string;
+  title: string;
+  difficulty: string;
+  topic: string;
+}

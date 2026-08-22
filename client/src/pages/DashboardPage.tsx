@@ -9,7 +9,13 @@ import ActivityGraph from "../components/dashboard/ActivityGraph";
 import RecentInterviews from "../components/dashboard/RecentInterviews";
 import LeetCodeProgressCard from "../components/dashboard/ProgressCard";
 import type { DashboardData } from "../types/dashboard.types";
-import { Sparkles, LogOut, Target, CheckCircle2, ArrowLeft } from "lucide-react";
+import {
+  Sparkles,
+  LogOut,
+  Target,
+  CheckCircle2,
+  ArrowLeft,
+} from "lucide-react";
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -92,32 +98,13 @@ const DashboardPage = () => {
               <span>Logout</span>
             </button>
           </div>
+          
         </div>
 
         {loading ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
         ) : data ? (
           <>
-            {(() => {
-              const attempts = data.stats.totalInterviews || 0;
-              const solved = Number(data.stats.totalSolved) || 0;
-
-              const easySolved =
-                data.recentInterviews?.filter(
-                  (i) => i.difficulty === "Easy" && i.allPassed,
-                ).length || 0;
-
-              const medSolved =
-                data.recentInterviews?.filter(
-                  (i) => i.difficulty === "Medium" && i.allPassed,
-                ).length || 0;
-
-              const hardSolved =
-                data.recentInterviews?.filter(
-                  (i) => i.difficulty === "Hard" && i.allPassed,
-                ).length || 0;
-
-              return (
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   {/* Total Attempts */}
                   <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
@@ -131,7 +118,7 @@ const DashboardPage = () => {
                     </div>
                     <div className="mt-4 flex items-baseline gap-2">
                       <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-                        {attempts}
+                        {data.stats.totalInterviews}
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
                         sessions
@@ -151,7 +138,7 @@ const DashboardPage = () => {
                     </div>
                     <div className="mt-4 flex items-baseline gap-2">
                       <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-                        {solved}
+                        {data.stats.totalSolved}
                       </span>
                       <span className="text-xs font-medium text-zinc-400">
                         accepted
@@ -161,16 +148,14 @@ const DashboardPage = () => {
 
                   {/* LeetCode-style Progress Gauge */}
                   <LeetCodeProgressCard
-                    easySolved={easySolved}
-                    easyTotal={10}
-                    mediumSolved={medSolved}
-                    mediumTotal={10}
-                    hardSolved={hardSolved}
-                    hardTotal={10}
+                    easySolved={data.progress.easySolved}
+                    easyTotal={data.progress.easyTotal}
+                    mediumSolved={data.progress.mediumSolved}
+                    mediumTotal={data.progress.mediumTotal}
+                    hardSolved={data.progress.hardSolved}
+                    hardTotal={data.progress.hardTotal}
                   />
                 </div>
-              );
-            })()}
 
             <QuickStart />
             <ActivityGraph activityByDay={data.activityByDay} />

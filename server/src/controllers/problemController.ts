@@ -4,7 +4,7 @@ import type { ProblemDocument } from "../models/problem.model.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { Topic } from "../models/topic.model.js";
 
-function toPublicProblem(problem:ProblemDocument){
+export function toPublicProblem(problem:ProblemDocument){
     return {
     id: problem._id,
     title: problem.title,

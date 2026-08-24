@@ -23,6 +23,8 @@ import AdminProblemFormPage from "../pages/admin/AdminProblemFormPage";
 import AdminTopicsPage from "../pages/admin/AdminTopicPage";
 import ProblemsPage from "../pages/ProblemsPage";
 import ProfilePage from "../pages/ProfilePage";
+import SessionSetupPage from "../pages/SessionSetupPage";
+import SessionWorkspace from "../pages/SessionWorkspace";
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -128,6 +130,24 @@ export default function AppRoutes() {
               element={
                 <PageWrapper>
                   <ProfilePage />
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/session/new"
+              element={
+                <PageWrapper>
+                  <SessionSetupPage />
+                </PageWrapper>
+              }
+            />
+
+            <Route
+              path="/session/:id"
+              element={
+                <PageWrapper>
+                  <SessionWorkspace />
                 </PageWrapper>
               }
             />

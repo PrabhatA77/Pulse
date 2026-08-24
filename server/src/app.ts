@@ -10,6 +10,8 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import sessionRoutes from "./routes/session.routes.js";
+
 
 const app = express();
 
@@ -24,6 +26,7 @@ app.use("/api/interviews", interviewRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/sessions", sessionRoutes);
 
 app.use(errorHandler);
 

@@ -118,12 +118,20 @@ const QuickStart = () => {
         </div>
 
         {/* Top Right Button */}
-        <button
-          onClick={() => navigate("/problems")}
-          className="group hidden sm:flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80"
-        >
-          Browse Problems
-        </button>
+        <div className="flex gap-5">
+          <button
+            onClick={() => navigate("/problems")}
+            className="group hidden sm:flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80"
+          >
+            Browse Problems
+          </button>
+          <button
+            onClick={() => navigate("/session/new")}
+            className="group hidden sm:flex items-center justify-center gap-2 rounded-xl bg-[#1a3a5c] px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-300 hover:opacity-90 dark:bg-[#019bf0]"
+          >
+            Timed Mock Interview
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">

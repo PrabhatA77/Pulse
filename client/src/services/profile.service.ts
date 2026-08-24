@@ -17,4 +17,6 @@ export const profileService = {
 
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post("/profile/change-password", { currentPassword, newPassword }),
+
+  deleteAccount: () => api.delete("/profile"),
 };

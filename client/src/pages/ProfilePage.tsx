@@ -7,6 +7,7 @@ import { ArrowLeft, Camera, Trash2, Loader2, Target, CheckCircle2 } from "lucide
 import { useAuthStore } from "../store/authStore";
 import { dashboardService } from "../services/dashboard.service";
 import { getErrorMessage } from "../utils/getErrorMessage";
+import SecuritySection from "../components/profile/SecuritySection";
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
@@ -92,16 +93,11 @@ const ProfileInfoForm = ({
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { user, updateProfile, uploadAvatar, removeAvatar, changePassword } = useAuthStore();
+  const { user, updateProfile, uploadAvatar, removeAvatar } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [changingPassword, setChangingPassword] = useState(false);
 
   const [stats, setStats] = useState<{ totalInterviews: number; totalSolved: number } | null>(null);
 
@@ -162,31 +158,6 @@ const ProfilePage = () => {
       toast.error(getErrorMessage(error, "Couldn't update profile"));
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  const handlePasswordSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      toast.error("New password must be at least 8 characters");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords don't match");
-      return;
-    }
-
-    setChangingPassword(true);
-    try {
-      await changePassword(currentPassword, newPassword);
-      toast.success("Password updated");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      toast.error(getErrorMessage(error, "Couldn't change password"));
-    } finally {
-      setChangingPassword(false);
     }
   };
 
@@ -253,7 +224,6 @@ const ProfilePage = () => {
               <p className="text-lg font-semibold text-zinc-900 dark:text-white">
                 {user.fullName || user.username}
               </p>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">@{user.username}</p>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">{user.email}</p>
 
               {user.avatarUrl && (
@@ -293,60 +263,8 @@ const ProfilePage = () => {
           onSave={handleProfileSubmit}
         />
 
-        {/* Security */}
-        <div className={sectionClass}>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-400">
-            Security
-          </h2>
-
-          {user.authProvider !== "local" ? (
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              You signed in with Google — password changes aren't available for this account.
-            </p>
-          ) : (
-            <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
-              <div>
-                <label className={labelClass}>Current password</label>
-                <input
-                  type="password"
-                  className={inputClass}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className={labelClass}>New password</label>
-                  <input
-                    type="password"
-                    className={inputClass}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div>
-                  <label className={labelClass}>Confirm new password</label>
-                  <input
-                    type="password"
-                    className={inputClass}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={changingPassword}
-                className="self-start rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition-all duration-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                {changingPassword ? "Updating…" : "Change password"}
-              </button>
-            </form>
-          )}
-        </div>
+        {/* Security (change password + danger zone) */}
+        <SecuritySection user={user} />
       </div>
     </div>
   );

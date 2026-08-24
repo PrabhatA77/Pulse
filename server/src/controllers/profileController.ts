@@ -72,3 +72,22 @@ export async function changePassword(req: AuthedRequest<ChangePasswordInput>, re
 
   res.status(200).json({ message: "Password updated successfully" });
 }
+
+export async function deleteAccount(req: AuthedRequest, res: Response) {
+  if (!req.userId) throw new AppError("Not authenticated", 401);
+
+  const user = await User.findById(req.userId);
+  if (!user) throw new AppError("User not found", 404);
+
+  if (user.avatarUrl) {
+    await deleteAvatar(user.id).catch(() => {
+      // Best-effort, same as removeAvatar — don't block account deletion
+      // if the Cloudinary asset is already gone.
+    });
+  }
+
+  await user.deleteOne();
+
+  res.clearCookie("token");
+  res.status(200).json({ message: "Account deleted" });
+}

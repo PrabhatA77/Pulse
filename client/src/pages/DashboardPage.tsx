@@ -158,7 +158,7 @@ const DashboardPage = () => {
                 </div>
 
             <QuickStart />
-            <ActivityGraph activityByDay={data.activityByDay} />
+            <ActivityGraph activityByDay={data.activityByDay} currentStreak={data.stats.currentStreak} />
             <RecentInterviews interviews={data.recentInterviews} />
           </>
         ) : (

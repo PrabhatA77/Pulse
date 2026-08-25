@@ -25,7 +25,11 @@ const problems: SeedProblem[] = [
     topic: "Arrays",
     description:
       "Given an array of integers nums and an integer target, return the indices of the two numbers that add up to target. Assume exactly one solution exists, and the same element can't be used twice.",
-    constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "Exactly one valid answer exists"],
+    constraints: [
+      "2 <= nums.length <= 10^4",
+      "-10^9 <= nums[i] <= 10^9",
+      "Exactly one valid answer exists",
+    ],
     functionName: "twoSum",
     parameters: [
       { name: "nums", type: "int[]" },
@@ -33,10 +37,27 @@ const problems: SeedProblem[] = [
     ],
     returnType: "int[]",
     testCases: [
-      { input: { nums: [2, 7, 11, 15], target: 9 }, expectedOutput: [0, 1], isHidden: false, explanation: "nums[0] + nums[1] == 9" },
-      { input: { nums: [3, 2, 4], target: 6 }, expectedOutput: [1, 2], isHidden: false },
-      { input: { nums: [3, 3], target: 6 }, expectedOutput: [0, 1], isHidden: true },
-      { input: { nums: [1, 5, 3, 9, 2], target: 11 }, expectedOutput: [3, 4], isHidden: true },
+      {
+        input: { nums: [2, 7, 11, 15], target: 9 },
+        expectedOutput: [0, 1],
+        isHidden: false,
+        explanation: "nums[0] + nums[1] == 9",
+      },
+      {
+        input: { nums: [3, 2, 4], target: 6 },
+        expectedOutput: [1, 2],
+        isHidden: false,
+      },
+      {
+        input: { nums: [3, 3], target: 6 },
+        expectedOutput: [0, 1],
+        isHidden: true,
+      },
+      {
+        input: { nums: [1, 5, 3, 9, 2], target: 11 },
+        expectedOutput: [3, 4],
+        isHidden: true,
+      },
     ],
     expectedTimeComplexity: "O(n)",
     expectedSpaceComplexity: "O(n)",
@@ -47,7 +68,10 @@ const problems: SeedProblem[] = [
     topic: "Stacks & Queues",
     description:
       "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. Brackets must close in the correct order.",
-    constraints: ["1 <= s.length <= 10^4", "s consists only of bracket characters"],
+    constraints: [
+      "1 <= s.length <= 10^4",
+      "s consists only of bracket characters",
+    ],
     functionName: "isValid",
     parameters: [{ name: "s", type: "string" }],
     returnType: "boolean",
@@ -64,13 +88,19 @@ const problems: SeedProblem[] = [
     title: "Maximum Subarray",
     difficulty: "Medium",
     topic: "Dynamic Programming",
-    description: "Given an integer array nums, find the contiguous subarray with the largest sum, and return that sum.",
+    description:
+      "Given an integer array nums, find the contiguous subarray with the largest sum, and return that sum.",
     constraints: ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"],
     functionName: "maxSubArray",
     parameters: [{ name: "nums", type: "int[]" }],
     returnType: "int",
     testCases: [
-      { input: { nums: [-2, 1, -3, 4, -1, 2, 1, -5, 4] }, expectedOutput: 6, isHidden: false, explanation: "[4,-1,2,1] has the largest sum = 6" },
+      {
+        input: { nums: [-2, 1, -3, 4, -1, 2, 1, -5, 4] },
+        expectedOutput: 6,
+        isHidden: false,
+        explanation: "[4,-1,2,1] has the largest sum = 6",
+      },
       { input: { nums: [1] }, expectedOutput: 1, isHidden: false },
       { input: { nums: [5, 4, -1, 7, 8] }, expectedOutput: 23, isHidden: true },
       { input: { nums: [-1, -2, -3] }, expectedOutput: -1, isHidden: true },
@@ -89,10 +119,16 @@ async function seed() {
   await mongoose.connect(uri);
   console.log("Connected to MongoDB");
 
-  await Problem.deleteMany({});
-  console.log("Cleared existing problems");
-
-  await Problem.insertMany(problems);
+  // Upsert by title, same pattern as seedTopics.ts — reruns update
+  // existing problems in place instead of wiping and recreating them,
+  // so admin-managed problems and their _ids survive a reseed.
+  for (const problem of problems) {
+    await Problem.findOneAndUpdate({ title: problem.title }, problem, {
+      upsert: true,
+      new: true,
+      runValidators: true,
+    });
+  }
   console.log(`Seeded ${problems.length} problems`);
 
   await mongoose.disconnect();

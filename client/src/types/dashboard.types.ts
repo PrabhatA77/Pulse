@@ -3,6 +3,8 @@ import type { InterviewFeedback, SubmissionStatus } from "./problem.types";
 export interface DashboardStats {
   totalInterviews: number;
   totalSolved: number;
+  currentStreak:number;
+  longestStreak:number;
 }
 
 export interface ActivityDay {

@@ -21,6 +21,14 @@ interface AuthedAnalyzeRequest extends Request<{id:string}>{
   userId?: string;
 }
 
+interface AuthedHistoryRequest extends Request<{ problemId: string }> {
+  userId?: string;
+}
+
+interface AuthedGetInterviewRequest extends Request<{ id: string }> {
+  userId?: string;
+}
+
 // Runs the tests and saves the submission. No AI call here on purpose —
 // the candidate should see pass/fail/TLE immediately instead of waiting
 // on an LLM round trip before finding out if their code even worked.
@@ -139,4 +147,66 @@ export async function analyzeInterview(req: AuthedAnalyzeRequest, res: Response)
   await interview.save();
  
   res.status(200).json({ feedback });
+}
+
+// Returns the current user's past submissions for a single problem —
+// used by the "My Submissions" tab in ProblemPanel so a user can see
+// their own progress on that specific question over time.
+export async function getSubmissionHistory(req: AuthedHistoryRequest, res: Response) {
+  const { problemId } = req.params;
+
+  if (!req.userId) {
+    throw new AppError("Not authenticated", 401);
+  }
+  if (!Types.ObjectId.isValid(problemId)) {
+    throw new AppError("Invalid problem id", 400);
+  }
+
+  const submissions = await Interview.find({ user: req.userId, problem: problemId })
+    .sort({ createdAt: -1 })
+    .select("language status passedTestCases totalTestCases allPassed createdAt");
+
+  res.status(200).json(
+    submissions.map((s) => ({
+      id: s._id.toString(),
+      language: s.language,
+      status: s.status,
+      passedTestCases: s.passedTestCases,
+      totalTestCases: s.totalTestCases,
+      allPassed: s.allPassed,
+      createdAt: s.createdAt.toISOString(),
+    })),
+  );
+}
+
+// Full detail for a single submission — includes the actual code and
+// feedback (if analyzed), unlike the history list which is summary-only
+// to keep that payload light. Used when a user clicks into a row in
+// "My Submissions".
+export async function getInterviewById(req: AuthedGetInterviewRequest, res: Response) {
+  const { id } = req.params;
+
+  if (!req.userId) {
+    throw new AppError("Not authenticated", 401);
+  }
+  if (!Types.ObjectId.isValid(id)) {
+    throw new AppError("Invalid interview id", 400);
+  }
+
+  const interview = await Interview.findOne({ _id: id, user: req.userId });
+  if (!interview) {
+    throw new AppError("Submission not found", 404);
+  }
+
+  res.status(200).json({
+    id: interview._id.toString(),
+    language: interview.language,
+    code: interview.code,
+    status: interview.status,
+    passedTestCases: interview.passedTestCases,
+    totalTestCases: interview.totalTestCases,
+    allPassed: interview.allPassed,
+    feedback: interview.feedback ?? null,
+    createdAt: interview.createdAt.toISOString(),
+  });
 }

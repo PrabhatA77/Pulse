@@ -93,13 +93,15 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
   const totalMap = Object.fromEntries(totalByDifficultyAgg.map((d) => [d._id, d.count]));
   const totalSolved = DIFFICULTIES.reduce((sum, d) => sum + (solvedMap[d] ?? 0), 0);
 
+  const { currentStreak, longestStreak } = computeStreaks(activityAgg);
+
+
   res.status(200).json({
     stats: {
       totalInterviews,
-      // Unique problems solved, not total accepted submissions — was
-      // previously counting every allPassed interview, which double
-      // counted repeat solves the same way the frontend bug did.
       totalSolved,
+      currentStreak,
+      longestStreak,
     },
     progress: {
       easySolved: solvedMap["Easy"] ?? 0,
@@ -122,4 +124,43 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
     })),
     activityByDay: activityAgg.map((a) => ({ date: a._id, count: a.count })),
   });
+}
+
+function computeStreaks(activityAgg: { _id: string; count: number }[]): {
+  currentStreak: number;
+  longestStreak: number;
+} {
+  const activeDates = new Set(activityAgg.filter((a) => a.count > 0).map((a) => a._id));
+  if (activeDates.size === 0) return { currentStreak: 0, longestStreak: 0 };
+
+  const toDateStr = (d: Date) => d.toISOString().slice(0, 10);
+
+  // Current streak: walk backward from today. If today has no activity
+  // yet, that shouldn't zero out an in-progress streak — start counting
+  // from yesterday instead, same way LeetCode/GitHub treat "today".
+  let currentStreak = 0;
+  const cursor = new Date();
+  if (!activeDates.has(toDateStr(cursor))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  while (activeDates.has(toDateStr(cursor))) {
+    currentStreak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  // Longest streak: scan all active dates in order, tracking the
+  // longest run of consecutive days.
+  const sortedDates = [...activeDates].sort();
+  let longestStreak = 0;
+  let run = 0;
+  let prevDate: Date | null = null;
+  for (const dateStr of sortedDates) {
+    const d = new Date(`${dateStr}T00:00:00Z`);
+    const diffDays = prevDate ? Math.round((d.getTime() - prevDate.    getTime()) / 86400000) : null;
+    run = diffDays === 1 ? run + 1 : 1;
+    longestStreak = Math.max(longestStreak, run);
+    prevDate = d;
+  }
+
+  return { currentStreak, longestStreak };
 }

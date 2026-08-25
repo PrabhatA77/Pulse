@@ -16,7 +16,7 @@ function scrollToSection(id: string) {
 }
 
 const Navbar = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
 
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark"),
@@ -82,7 +82,7 @@ const Navbar = () => {
             {!isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </button>
 
-          {isAuthenticated ? (
+          {isLoading ? null : isAuthenticated ? (
             <ProfileDropdown />
           ) : (
             <div className="hidden items-center gap-3 md:flex">
@@ -123,7 +123,7 @@ const Navbar = () => {
             <button type="button" className={`${NAV_LINK_CLASS} text-left`} onClick={() => handleNavClick("features")}>
               Features
             </button>
-            {!isAuthenticated && (
+            {!isLoading && !isAuthenticated && (
               <>
                 <Link
                   to="/signup"

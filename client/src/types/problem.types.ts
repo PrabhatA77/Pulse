@@ -41,6 +41,8 @@ export interface TestRunResult {
   results: TestCaseResult[];
 }
 
+export type ExecuteResponse = TestRunResult;
+
 export type SubmissionStatus =
   | "compile_error"
   | "time_limit_exceeded"
@@ -59,6 +61,23 @@ export interface SubmitResult {
 // What POST /interviews/:id/analyze returns.
 export interface AnalyzeResult {
   feedback: InterviewFeedback;
+}
+
+// A single row in a problem's submission history — GET
+// /interviews/problem/:problemId.
+export interface SubmissionHistoryItem {
+  id: string;
+  language: string;
+  status: SubmissionStatus;
+  passedTestCases: number;
+  totalTestCases: number;
+  allPassed: boolean;
+  createdAt: string;
+}
+
+export interface SubmissionDetail extends SubmissionHistoryItem {
+  code: string;
+  feedback: InterviewFeedback | null;
 }
 
 export interface ProblemTopic {

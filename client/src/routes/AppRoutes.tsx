@@ -23,6 +23,9 @@ import ProblemsPage from "../pages/ProblemsPage";
 import ProfilePage from "../pages/ProfilePage";
 import SessionSetupPage from "../pages/SessionSetupPage";
 import SessionWorkspace from "../pages/SessionWorkspace";
+import AboutPage from "../pages/AboutPage";
+import TermsOfServicePage from "../pages/TermsOfServicePage";
+import PrivacyPolicyPage from "../pages/PrivacyPolicyPage";
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -177,6 +180,31 @@ export default function AppRoutes() {
               }
             />
           </Route>
+
+          <Route
+            path="/about"
+            element={
+              <PageWrapper>
+                <AboutPage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/terms"
+            element={
+              <PageWrapper>
+                <TermsOfServicePage />
+              </PageWrapper>
+            }
+          />
+          <Route
+            path="/privacy"
+            element={
+              <PageWrapper>
+                <PrivacyPolicyPage />
+              </PageWrapper>
+            }
+          />
         </Routes>
       </AnimatePresence>
     </GoogleOAuthProvider>

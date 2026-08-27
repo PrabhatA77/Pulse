@@ -3,15 +3,13 @@ import logo from "../../assets/logo.png";
 
 const FOOTER_LINKS: Record<string, { label: string; href: string }[]> = {
   Product: [
-    { label: "Features", href: "#features" },
-    { label: "Problems", href: "#" },
+    { label: "Features", href: "/#features" },
+    { label: "Problems", href: "/problems" },
   ],
-  Company: [
-    { label: "About", href: "#" },
-  ],
+  Company: [{ label: "About", href: "/about" }],
   Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
   ],
 };
 
@@ -34,7 +32,9 @@ const Footer = () => {
             </span>
           </Link>
 
-          <span className="hidden text-xs text-gray-400 dark:text-gray-600 sm:inline">|</span>
+          <span className="hidden text-xs text-gray-400 dark:text-gray-600 sm:inline">
+            |
+          </span>
 
           <div className="flex items-center gap-1.5">
             {SOCIAL_ICONS.map((icon) => (
@@ -57,13 +57,13 @@ const Footer = () => {
           {Object.values(FOOTER_LINKS)
             .flat()
             .map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.href}
                 className="transition-colors hover:text-[#1a3a5c] dark:hover:text-[#019bf0]"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
         </div>
       </div>

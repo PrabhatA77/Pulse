@@ -64,12 +64,23 @@ const Navbar = () => {
 
           {/* Product/Features — hidden on small screens, in the mobile menu instead */}
           <div className="hidden gap-5 md:flex">
-            <button type="button" className={NAV_LINK_CLASS} onClick={() => handleNavClick("hero")}>
+            <button
+              type="button"
+              className={NAV_LINK_CLASS}
+              onClick={() => handleNavClick("hero")}
+            >
               Product
             </button>
-            <button type="button" className={NAV_LINK_CLASS} onClick={() => handleNavClick("features")}>
+            <button
+              type="button"
+              className={NAV_LINK_CLASS}
+              onClick={() => handleNavClick("features")}
+            >
               Features
             </button>
+            <Link to="/about" className={NAV_LINK_CLASS}>
+              About
+            </Link>
           </div>
         </div>
 
@@ -79,7 +90,11 @@ const Navbar = () => {
             className="transition-all duration-300 dark:text-white"
             onClick={toggleTheme}
           >
-            {!isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            {!isDark ? (
+              <Moon className="h-5 w-5" />
+            ) : (
+              <Sun className="h-5 w-5" />
+            )}
           </button>
 
           {isLoading ? null : isAuthenticated ? (
@@ -117,12 +132,27 @@ const Navbar = () => {
       >
         <div className="overflow-hidden">
           <div className="mx-auto flex max-w-7xl flex-col gap-1 border-t border-gray-300/60 px-4 pb-4 pt-2 dark:border-gray-800/60 sm:px-6 lg:px-8">
-            <button type="button" className={`${NAV_LINK_CLASS} text-left`} onClick={() => handleNavClick("hero")}>
+            <button
+              type="button"
+              className={`${NAV_LINK_CLASS} text-left`}
+              onClick={() => handleNavClick("hero")}
+            >
               Product
             </button>
-            <button type="button" className={`${NAV_LINK_CLASS} text-left`} onClick={() => handleNavClick("features")}>
+            <button
+              type="button"
+              className={`${NAV_LINK_CLASS} text-left`}
+              onClick={() => handleNavClick("features")}
+            >
               Features
             </button>
+            <Link
+              to="/about"
+              className={NAV_LINK_CLASS}
+              onClick={() => setMenuOpen(false)}
+            >
+              About
+            </Link>
             {!isLoading && !isAuthenticated && (
               <>
                 <Link

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState,useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -16,6 +16,9 @@ import type {
 } from "../types/problem.types";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { generateStarterCode } from "../utils/starterCode";
+import { draftService } from "../services/draft.service";
+
+const DRAFT_SAVE_DELAY_MS = 1000;
 
 // Keep in sync with LANGUAGE_VERSIONS in server/src/services/piston.service.ts.
 const LANGUAGES = [
@@ -23,6 +26,10 @@ const LANGUAGES = [
   { id: "python", label: "Python" },
   { id: "cpp", label: "C++" },
   { id: "java", label: "Java" },
+  { id: "typescript", label: "TypeScript" },
+  { id: "go", label: "Go" },
+  { id: "ruby", label: "Ruby" },
+  { id: "rust", label: "Rust" },
 ];
 
 const InterviewWorkspace = () => {
@@ -46,6 +53,29 @@ const InterviewWorkspace = () => {
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+
+    const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDraftRef = useRef<{ problemId: string; language: string; code: string } | null>(null);
+
+  const flushDraftSave = useCallback(() => {
+    if (draftSaveTimer.current) {
+      clearTimeout(draftSaveTimer.current);
+      draftSaveTimer.current = null;
+    }
+    if (pendingDraftRef.current) {
+      const { problemId, language, code } = pendingDraftRef.current;
+      pendingDraftRef.current = null;
+      draftService.save(problemId, language, code).catch(() => {
+        // Best-effort — a failed autosave shouldn't interrupt the user.
+      });
+    }
+  }, []);
+
+  // Flush any pending debounce on unmount (e.g. navigating away right
+  // after typing) so the last edit isn't silently dropped.
+  useEffect(() => {
+    return () => flushDraftSave();
+  }, [flushDraftSave]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,8 +102,20 @@ const InterviewWorkspace = () => {
             generateStarterCode(lang.id, signature),
           ]),
         );
-        setCodeByLanguage(initialCode);
         setDefaultCodeByLanguage(initialCode);
+
+        // Overlay any saved drafts for this problem on top of the starter
+        // code. A missing/failed fetch just falls back to starter code —
+        // not having drafts yet isn't an error worth a toast.
+        let codeToUse = initialCode;
+        try {
+          const { data: drafts } = await draftService.get(data.id);
+          codeToUse = { ...initialCode, ...drafts };
+        } catch {
+          // No drafts yet, or fetch failed.
+        }
+        if (!cancelled) setCodeByLanguage(codeToUse);
+
       } catch (error) {
         if (!cancelled)
           toast.error(
@@ -93,8 +135,13 @@ const InterviewWorkspace = () => {
 
   const code = codeByLanguage[language] ?? "";
 
-  const handleCodeChange = (value: string) => {
+    const handleCodeChange = (value: string) => {
     setCodeByLanguage((prev) => ({ ...prev, [language]: value }));
+    if (!problem) return;
+
+    pendingDraftRef.current = { problemId: problem.id, language, code: value };
+    if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
+    draftSaveTimer.current = setTimeout(flushDraftSave, DRAFT_SAVE_DELAY_MS);
   };
 
   const handleRun = useCallback(async () => {

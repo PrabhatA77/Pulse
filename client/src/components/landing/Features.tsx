@@ -13,9 +13,9 @@ const FEATURES = [
   {
     icon: Code2,
     title: "Multi-Language Execution",
-    shortDescription: "Write and run code in JavaScript, Python, C++, or Java.",
+    shortDescription: "Write and run code in 8 languages.",
     longDescription:
-      "Your solution is compiled and run in a sandboxed environment against real test cases, with instant pass/fail feedback per language.",
+      "Your solution is compiled and run in a sandboxed environment against real test cases — JavaScript, Python, C++, Java, TypeScript, Go, Ruby, and Rust — with instant pass/fail feedback per language.",
   },
   {
     icon: BarChart3,

@@ -1,3 +1,21 @@
+export const PARAM_TYPES = [
+  "int",
+  "float",
+  "string",
+  "boolean",
+  "int[]",
+  "float[]",
+  "string[]",
+  "boolean[]",
+] as const;
+export type ParamType = (typeof PARAM_TYPES)[number];
+
+export interface FunctionParam {
+  name: string;
+  type: ParamType;
+}
+
+
 export interface Problem {
   id: string;
   title: string;
@@ -5,8 +23,8 @@ export interface Problem {
   difficulty: string;
   topic: string;
   functionName: string;
-  parameters: Array<{ name: string; type: string }>;
-  returnType: string;
+  parameters: FunctionParam[];
+  returnType: ParamType;
   examples: Array<{ input: string; output: string; explanation?: string }>;
   constraints: string[];
 }

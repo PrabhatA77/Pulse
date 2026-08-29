@@ -11,6 +11,8 @@ import adminRoutes from "./routes/admin.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import sessionRoutes from "./routes/session.routes.js";
+import draftRoutes from "./routes/draft.routes.js";
+
 
 
 const app = express();
@@ -27,6 +29,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/drafts", draftRoutes);
 
 app.use(errorHandler);
 

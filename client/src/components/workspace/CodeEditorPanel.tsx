@@ -30,6 +30,10 @@ const LANGUAGE_BADGES: Record<string, string> = {
   python: "PY",
   cpp: "C++",
   java: "JV",
+  typescript: "TS",
+  go: "GO",
+  ruby: "RB",
+  rust:"RS",
 };
 
 const CodeEditorPanel = ({
@@ -179,7 +183,8 @@ const CodeEditorPanel = ({
                 className="
                   absolute left-0 top-full z-50 mt-2 w-52
                   origin-top
-                  overflow-hidden rounded-xl
+                  max-h-72 overflow-y-auto
+                  rounded-xl
                   border border-zinc-200
                   bg-white p-1.5
                   shadow-2xl

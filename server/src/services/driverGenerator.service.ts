@@ -15,6 +15,10 @@ export const SUPPORTED_LANGUAGES = [
   "python",
   "cpp",
   "java",
+  "typescript",
+  "go",
+  "ruby",
+  "rust"
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -47,6 +51,15 @@ export function generateHarness(
       return generateCpp(userCode, signature, input);
     case "java":
       return generateJava(userCode, signature, input);
+    case "typescript":
+      // Valid JS is valid TS, so the existing JS harness works unchanged.
+      return generateJavascript(userCode, signature, input);
+    case "go":
+      return generateGo(userCode, signature, input);
+    case "ruby":
+      return generateRuby(userCode, signature, input);
+    case "rust":
+      return generateRust(userCode, signature, input);
   }
 }
 
@@ -261,6 +274,142 @@ ${argDeclarations}
         var __result = sol.${signature.functionName}(${argNames});
         System.out.print(__toJson(__result));
     }
+}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Go — plain top-level function, e.g. `func twoSum(nums []int, target int) []int { ... }`.
+// No classes needed; encoding/json handles printing any return type uniformly.
+// ---------------------------------------------------------------------------
+
+const GO_TYPES: Record<ParamType, string> = {
+  int: "int",
+  float: "float64",
+  string: "string",
+  boolean: "bool",
+  "int[]": "[]int",
+  "float[]": "[]float64",
+  "string[]": "[]string",
+  "boolean[]": "[]bool",
+};
+
+function toGoLiteral(value: TestCaseValue, type: ParamType): string {
+  if (type.endsWith("[]")) {
+    const baseType = type.slice(0, -2) as ParamType;
+    const items = (value as Array<number | string | boolean>).map((v) => toGoLiteral(v, baseType));
+    return `${GO_TYPES[type]}{${items.join(", ")}}`;
+  }
+  if (type === "string") return JSON.stringify(value);
+  if (type === "boolean") return value ? "true" : "false";
+  return String(value);
+}
+
+function generateGo(userCode: string, signature: Signature, input: Record<string, TestCaseValue>): string {
+  const argDeclarations = signature.parameters
+    .map((p) => `\t${p.name} := ${toGoLiteral(getInputValue(input, p), p.type)}`)
+    .join("\n");
+  const argNames = signature.parameters.map((p) => p.name).join(", ");
+
+  return `package main
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+${userCode}
+
+func main() {
+${argDeclarations}
+	__result := ${signature.functionName}(${argNames})
+	__bytes, _ := json.Marshal(__result)
+	fmt.Print(string(__bytes))
+}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Ruby — plain top-level method, e.g. `def two_sum(nums, target) ... end`.
+// JSON.stringify already produces valid Ruby literals for our value types
+// (numbers, quoted strings, true/false, arrays), so no per-type formatting
+// is needed — same reason the JS generator gets away with this.
+// ---------------------------------------------------------------------------
+
+function generateRuby(userCode: string, signature: Signature, input: Record<string, TestCaseValue>): string {
+  const args = signature.parameters
+    .map((p) => JSON.stringify(getInputValue(input, p)))
+    .join(", ");
+
+  return `require 'json'
+
+${userCode}
+
+__result = ${signature.functionName}(${args})
+puts __result.to_json
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Rust — plain top-level function using owned types (Vec<T>/String, not
+// slices/&str) so there's no borrow-checker friction when the harness
+// constructs literal test values. Piston compiles with plain rustc (no
+// Cargo, so no serde_json) — since we know the return type at codegen
+// time, we emit the exact serialization expression for it directly
+// instead of a generic serializer.
+// ---------------------------------------------------------------------------
+
+const RUST_TYPES: Record<ParamType, string> = {
+  int: "i32",
+  float: "f64",
+  string: "String",
+  boolean: "bool",
+  "int[]": "Vec<i32>",
+  "float[]": "Vec<f64>",
+  "string[]": "Vec<String>",
+  "boolean[]": "Vec<bool>",
+};
+
+function toRustLiteral(value: TestCaseValue, type: ParamType): string {
+  if (type.endsWith("[]")) {
+    const baseType = type.slice(0, -2) as ParamType;
+    const items = (value as Array<number | string | boolean>).map((v) => toRustLiteral(v, baseType));
+    return `vec![${items.join(", ")}]`;
+  }
+  if (type === "string") return `${JSON.stringify(value)}.to_string()`;
+  if (type === "boolean") return value ? "true" : "false";
+  return String(value);
+}
+
+function rustToJsonExpr(returnType: ParamType): string {
+  switch (returnType) {
+    case "int":
+    case "float":
+    case "boolean":
+      return "__result.to_string()";
+    case "string":
+      return `format!("{:?}", __result)`;
+    case "int[]":
+    case "float[]":
+    case "boolean[]":
+      return `format!("[{}]", __result.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(","))`;
+    case "string[]":
+      return `format!("[{}]", __result.iter().map(|x| format!("{:?}", x)).collect::<Vec<_>>().join(","))`;
+  }
+}
+
+function generateRust(userCode: string, signature: Signature, input: Record<string, TestCaseValue>): string {
+  const argDeclarations = signature.parameters
+    .map((p) => `\tlet ${p.name}: ${RUST_TYPES[p.type]} = ${toRustLiteral(getInputValue(input, p), p.type)};`)
+    .join("\n");
+  const argNames = signature.parameters.map((p) => p.name).join(", ");
+
+  return `${userCode}
+
+fn main() {
+${argDeclarations}
+\tlet __result = ${signature.functionName}(${argNames});
+\tprintln!("{}", ${rustToJsonExpr(signature.returnType)});
 }
 `;
 }

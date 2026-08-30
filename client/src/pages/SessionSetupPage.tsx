@@ -14,10 +14,10 @@ const SessionSetupPage = () => {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<string[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
-  const [topic, setTopic] = useState("any");
   const [difficulty, setDifficulty] = useState("Easy");
   const [duration, setDuration] = useState(30);
   const [starting, setStarting] = useState(false);
+  const [tag,setTag] = useState("any");
 
   useEffect(() => {
     (async () => {
@@ -37,7 +37,7 @@ const SessionSetupPage = () => {
     try {
       const { data } = await sessionService.start({
         difficulty,
-        topic: topic === "any" ? undefined : topic,
+        tag: tag === "any" ? undefined : tag,
         durationMinutes: duration,
       });
       navigate(`/session/${data.id}`);
@@ -48,7 +48,7 @@ const SessionSetupPage = () => {
     }
   };
 
-  const topicOptions = [{ value: "any", label: "Any topic" }, ...topics.map((t) => ({ value: t, label: t }))];
+  const tagOptions = [{ value: "any", label: "Any tag" }, ...topics.map((t) => ({ value: t, label: t }))];
   const difficultyOptions = DIFFICULTIES.map((d) => ({ value: d, label: d }));
   const durationOptions = DURATIONS.map((d) => ({ value: String(d), label: `${d} minutes` }));
 
@@ -69,7 +69,7 @@ const SessionSetupPage = () => {
         </p>
 
         <div className="mt-6 flex flex-col gap-4">
-          <CustomSelect label="Topic" icon={<Layers className="h-3.5 w-3.5" />} value={topic} onChange={setTopic} options={topicOptions} />
+          <CustomSelect label="Topic" icon={<Layers className="h-3.5 w-3.5" />} value={tag} onChange={setTag} options={tagOptions} />
           <CustomSelect label="Difficulty" icon={<Gauge className="h-3.5 w-3.5" />} value={difficulty} onChange={setDifficulty} options={difficultyOptions} />
           <CustomSelect
             label="Duration"

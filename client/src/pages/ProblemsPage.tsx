@@ -6,6 +6,7 @@ import { problemService } from "../services/problem.service";
 import type { ProblemSummary } from "../types/problem.types";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { CustomSelect } from "../components/common/CustomSelect";
+import { useDebouncedValue } from "../hooks/useDebounceValue";
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 
@@ -29,8 +30,9 @@ const ProblemsPage = () => {
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
-  const [topicFilter, setTopicFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -40,7 +42,8 @@ const ProblemsPage = () => {
         const { data } = await problemService.list();
         if (isMounted) setProblems(data);
       } catch (error) {
-        if (isMounted) toast.error(getErrorMessage(error, "Couldn't load problems"));
+        if (isMounted)
+          toast.error(getErrorMessage(error, "Couldn't load problems"));
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -56,16 +59,21 @@ const ProblemsPage = () => {
   };
 
   const filteredProblems = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = debouncedSearch.trim().toLowerCase();
     return problems.filter((p) => {
-      const matchesSearch = query === "" || p.title.toLowerCase().includes(query);
-      const matchesDifficulty = difficultyFilter === "all" || p.difficulty === difficultyFilter;
-      const matchesTopic = topicFilter === "all" || p.topic === topicFilter;
-      return matchesSearch && matchesDifficulty && matchesTopic;
+      const matchesSearch =
+        query === "" || p.title.toLowerCase().includes(query);
+      const matchesDifficulty =
+        difficultyFilter === "all" || p.difficulty === difficultyFilter;
+      const matchesTag = tagFilter === "all" || (p.tags ?? []).includes(tagFilter);
+      return matchesSearch && matchesDifficulty && matchesTag;
     });
-  }, [problems, search, difficultyFilter, topicFilter]);
+  }, [problems, debouncedSearch, difficultyFilter, tagFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProblems.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProblems.length / PAGE_SIZE),
+  );
   const clampedPage = Math.min(page, totalPages);
   const pagedProblems = filteredProblems.slice(
     (clampedPage - 1) * PAGE_SIZE,
@@ -74,15 +82,34 @@ const ProblemsPage = () => {
 
   const difficultyOptions = [
     { value: "all", label: "All difficulties" },
-    ...DIFFICULTIES.map((d) => ({ value: d, label: d, dotClass: DIFFICULTY_DOTS[d] })),
+    ...DIFFICULTIES.map((d) => ({
+      value: d,
+      label: d,
+      dotClass: DIFFICULTY_DOTS[d],
+    })),
   ];
 
-  const topicOptions = useMemo(() => {
-    const uniqueTopics = Array.from(new Set(problems.map((p) => p.topic))).sort();
+  const tagOptions = useMemo(() => {
+    const uniqueTags = Array.from(
+      new Set(problems.flatMap((p) => p.tags ?? [])),
+    ).sort();
     return [
-      { value: "all", label: "All topics" },
-      ...uniqueTopics.map((t) => ({ value: t, label: t })),
+      { value: "all", label: "All tags" },
+      ...uniqueTags.map((t) => ({ value: t, label: t })),
     ];
+  }, [problems]);
+
+  const difficultyDistribution = useMemo(() => {
+    const counts = { Easy: 0, Medium: 0, Hard: 0 };
+    for (const p of problems) {
+      if (p.difficulty in counts) counts[p.difficulty as keyof typeof counts]++;
+    }
+    const total = problems.length || 1;
+    return (["Easy", "Medium", "Hard"] as const).map((d) => ({
+      label: d,
+      count: counts[d],
+      pct: (counts[d] / total) * 100,
+    }));
   }, [problems]);
 
   const openProblem = (id: string) => {
@@ -107,6 +134,43 @@ const ProblemsPage = () => {
             {filteredProblems.length} of {problems.length} problem
             {problems.length === 1 ? "" : "s"}
           </p>
+
+          {problems.length > 0 && (
+            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                {difficultyDistribution.map((d) => (
+                  <div
+                    key={d.label}
+                    style={{ width: `${d.pct}%` }}
+                    className={
+                      d.label === "Easy"
+                        ? "bg-green-500"
+                        : d.label === "Medium"
+                          ? "bg-amber-500"
+                          : "bg-red-500"
+                    }
+                    title={`${d.label}: ${d.count}`}
+                  />
+                ))}
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                {difficultyDistribution.map((d) => (
+                  <span key={d.label} className="flex items-center gap-1.5">
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        d.label === "Easy"
+                          ? "bg-green-500"
+                          : d.label === "Medium"
+                            ? "bg-amber-500"
+                            : "bg-red-500"
+                      }`}
+                    />
+                    {d.label}: {d.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Search + filters */}
@@ -132,19 +196,21 @@ const ProblemsPage = () => {
           />
 
           <CustomSelect
-            value={topicFilter}
+            value={tagFilter}
             onChange={(val) => {
-              setTopicFilter(val);
+              setTagFilter(val);
               setPage(1);
             }}
-            options={topicOptions}
+            options={tagOptions}
             className="sm:w-56"
           />
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
           {loading ? (
-            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
+              Loading…
+            </p>
           ) : problems.length === 0 ? (
             <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
               No problems available yet.
@@ -161,7 +227,7 @@ const ProblemsPage = () => {
                     <tr className="border-b border-zinc-200 text-xs uppercase tracking-wider text-zinc-400 dark:border-zinc-800">
                       <th className="px-5 py-3 font-semibold">Title</th>
                       <th className="px-5 py-3 font-semibold">Difficulty</th>
-                      <th className="px-5 py-3 font-semibold">Topic</th>
+                      <th className="px-5 py-3 font-semibold">Tags</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -181,7 +247,18 @@ const ProblemsPage = () => {
                             {problem.difficulty}
                           </span>
                         </td>
-                        <td className="px-5 py-3">{problem.topic}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {problem.tags?.map((t) => (
+                              <span
+                                key={t}
+                                className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -203,7 +280,9 @@ const ProblemsPage = () => {
                       Prev
                     </button>
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={clampedPage === totalPages}
                       className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition-all duration-300 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
                     >

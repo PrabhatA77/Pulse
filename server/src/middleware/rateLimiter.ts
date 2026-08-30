@@ -36,3 +36,13 @@ export const submissionLimiter = rateLimit({
     legacyHeaders: false,
     message: { message: "Too many submissions. Please try again later." },
 });
+
+// Covers hint requests — each one is an LLM call, so cap it separately
+// from execute/submit.
+export const hintLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many hint requests. Please try again later." },
+});

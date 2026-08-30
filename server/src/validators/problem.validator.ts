@@ -3,7 +3,7 @@ import { PARAM_TYPES } from "../models/problem.model.js";
 
 const paramTypeEnum = z.enum(PARAM_TYPES);
 const difficultyEnum = z.enum(["Easy", "Medium", "Hard"]);
-const topicEnum = z.string().trim().min(1, "Topic is required")
+const tagsSchema = z.array(z.string().trim().min(1)).min(1, "At least one tag is required");
 
 const functionParamSchema = z.object({
   name: z.string().trim().min(1, "Parameter name is required"),
@@ -29,7 +29,7 @@ const testCaseSchema = z.object({
 export const createProblemSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   difficulty: difficultyEnum,
-  topic: topicEnum,
+  tags: tagsSchema,
   description: z.string().trim().min(1, "Description is required"),
   constraints: z.array(z.string()).default([]),
   functionName: z.string().trim().min(1, "Function name is required"),

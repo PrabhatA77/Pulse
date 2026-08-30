@@ -17,7 +17,7 @@ const ACTIVITY_WINDOW_DAYS = 365;
 // fast, easier to just describe the real shape directly.
 interface LeanInterview {
   _id: Types.ObjectId;
-  problem: { _id: Types.ObjectId; title: string; topic: string; difficulty: string } | null;
+  problem: { _id: Types.ObjectId; title: string;difficulty: string } | null;
   language: string;
   passedTestCases: number;
   totalTestCases: number;
@@ -52,7 +52,7 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
       Interview.find({ user: userId })
         .sort({ createdAt: -1 })
         .limit(20)
-        .populate("problem", "title topic difficulty")
+        .populate("problem", "title difficulty")
         .lean<LeanInterview[]>(),
 
       Interview.aggregate<{ _id: string; count: number }>([

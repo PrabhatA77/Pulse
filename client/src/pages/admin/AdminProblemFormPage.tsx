@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Plus, Trash2, Layers, Gauge, Code2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Gauge, Code2 } from "lucide-react";
 
 import { adminService } from "../../services/admin.service";
 import { getErrorMessage } from "../../utils/getErrorMessage";
@@ -27,19 +27,6 @@ interface TestCaseFormState {
   isHidden: boolean;
   explanation: string;
 }
-
-const TOPIC_BADGES: Record<string, string> = {
-  Arrays: "ARR",
-  Strings: "STR",
-  "Linked List": "LL",
-  "Stacks & Queues": "STK",
-  Trees: "TREE",
-  Graphs: "GRP",
-  "Dynamic Programming": "DP",
-  "Recursion & BackTracking": "REC",
-  "Sorting & Searching": "SRT",
-  Greedy: "GRD",
-};
 
 const DIFFICULTY_DOTS: Record<string, string> = {
   Easy: "bg-green-500",
@@ -72,7 +59,7 @@ const AdminProblemFormPage = () => {
 
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty>("Easy");
-  const [topic, setTopic] = useState<string>("");
+  const [tags, setTags] = useState<string[]>([]);
   const [topics, setTopics] = useState<AdminTopic[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
   const [description, setDescription] = useState("");
@@ -96,7 +83,7 @@ const AdminProblemFormPage = () => {
         const { data } = await adminService.getProblem(id);
         setTitle(data.title);
         setDifficulty(data.difficulty);
-        setTopic(data.topic);
+        setTags(data.tags && data.tags.length > 0 ? data.tags : []);
         setDescription(data.description);
         setConstraints(data.constraints.length > 0 ? data.constraints : [""]);
         setFunctionName(data.functionName);
@@ -131,7 +118,7 @@ const AdminProblemFormPage = () => {
         const { data } = await adminService.listTopics();
         setTopics(data);
         if (!id && data.length > 0) {
-          setTopic((current) => current || data[0].name);
+          setTags((current) => (current.length > 0 ? current : [data[0].name]));
         }
       } catch (error) {
         toast.error(getErrorMessage(error, "Couldn't load topics"));
@@ -163,11 +150,20 @@ const AdminProblemFormPage = () => {
   const removeTestCase = (i: number) =>
     setTestCases((prev) => prev.filter((_, idx) => idx !== i));
 
+  const toggleTag = (name: string) =>
+    setTags((prev) =>
+      prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name],
+    );
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!title.trim() || !functionName.trim() || !description.trim()) {
       toast.error("Title, description, and function name are required");
+      return;
+    }
+    if (tags.length === 0) {
+      toast.error("Select at least one tag");
       return;
     }
     if (parameters.some((p) => !p.name.trim())) {
@@ -198,7 +194,7 @@ const AdminProblemFormPage = () => {
     const payload: ProblemFormPayload = {
       title: title.trim(),
       difficulty,
-      topic,
+      tags,
       description: description.trim(),
       constraints: constraints.map((c) => c.trim()).filter(Boolean),
       functionName: functionName.trim(),
@@ -233,12 +229,6 @@ const AdminProblemFormPage = () => {
     value: d as Difficulty,
     label: d,
     dotClass: DIFFICULTY_DOTS[d],
-  }));
-
-  const topicOptions = topics.map((t) => ({
-    value: t.name,
-    label: t.name,
-    badge: TOPIC_BADGES[t.name] ?? "CODE",
   }));
 
   const paramTypeOptions = PARAM_TYPES.map((t) => ({
@@ -300,7 +290,7 @@ const AdminProblemFormPage = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
                 <CustomSelect
                   label="Difficulty"
                   icon={<Gauge className="h-3.5 w-3.5" />}
@@ -308,13 +298,29 @@ const AdminProblemFormPage = () => {
                   onChange={(val) => setDifficulty(val as Difficulty)}
                   options={difficultyOptions}
                 />
-                <CustomSelect
-                  label="Topic"
-                  icon={<Layers className="h-3.5 w-3.5" />}
-                  value={topic}
-                  onChange={(val) => setTopic(val)}
-                  options={topicOptions}
-                />
+              </div>
+
+              <div>
+                <label className={labelClass}>Tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {topics.map((t) => {
+                    const selected = tags.includes(t.name);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleTag(t.name)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                          selected
+                            ? "border-[#019bf0] bg-[#019bf0]/10 text-[#019bf0]"
+                            : "border-zinc-300 text-zinc-600 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-400"
+                        }`}
+                      >
+                        {t.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>

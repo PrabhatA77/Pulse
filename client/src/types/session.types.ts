@@ -14,7 +14,7 @@ export interface InterviewSession {
 
 export interface StartSessionPayload {
   difficulty?: string;
-  topic?: string;
+  tag?: string;
   durationMinutes: number;
 }
 

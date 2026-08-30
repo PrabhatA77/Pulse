@@ -9,6 +9,7 @@ import ActivityGraph from "../components/dashboard/ActivityGraph";
 import RecentInterviews from "../components/dashboard/RecentInterviews";
 import LeetCodeProgressCard from "../components/dashboard/ProgressCard";
 import type { DashboardData } from "../types/dashboard.types";
+import StreakBanner from "../components/dashboard/StreakBanner";
 import {
   Sparkles,
   LogOut,
@@ -22,6 +23,13 @@ function getTimeGreeting(): string {
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
+}
+
+function isSolvedToday(
+  activityByDay: { date: string; count: number }[],
+): boolean {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  return activityByDay.some((d) => d.date === todayStr && d.count > 0);
 }
 
 const DashboardPage = () => {
@@ -98,67 +106,73 @@ const DashboardPage = () => {
               <span>Logout</span>
             </button>
           </div>
-          
         </div>
 
         {loading ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
         ) : data ? (
           <>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                  {/* Total Attempts */}
-                  <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                        Total Attempts
-                      </span>
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#019bf0]/10 text-[#019bf0]">
-                        <Target className="h-4.5 w-4.5" />
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline gap-2">
-                      <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-                        {data.stats.totalInterviews}
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        sessions
-                      </span>
-                    </div>
+            <StreakBanner
+              currentStreak={data.stats.currentStreak}
+              solvedToday={isSolvedToday(data.activityByDay)}
+            />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              {/* Total Attempts */}
+              <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    Total Attempts
+                  </span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#019bf0]/10 text-[#019bf0]">
+                    <Target className="h-4.5 w-4.5" />
                   </div>
-
-                  {/* Total Solved */}
-                  <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                        Total Solved
-                      </span>
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-                        <CheckCircle2 className="h-4.5 w-4.5" />
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline gap-2">
-                      <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-                        {data.stats.totalSolved}
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400">
-                        accepted
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* LeetCode-style Progress Gauge */}
-                  <LeetCodeProgressCard
-                    easySolved={data.progress.easySolved}
-                    easyTotal={data.progress.easyTotal}
-                    mediumSolved={data.progress.mediumSolved}
-                    mediumTotal={data.progress.mediumTotal}
-                    hardSolved={data.progress.hardSolved}
-                    hardTotal={data.progress.hardTotal}
-                  />
                 </div>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+                    {data.stats.totalInterviews}
+                  </span>
+                  <span className="text-xs font-medium text-zinc-400">
+                    sessions
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Solved */}
+              <div className="relative flex flex-col justify-between rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    Total Solved
+                  </span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+                    <CheckCircle2 className="h-4.5 w-4.5" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+                    {data.stats.totalSolved}
+                  </span>
+                  <span className="text-xs font-medium text-zinc-400">
+                    accepted
+                  </span>
+                </div>
+              </div>
+
+              {/* LeetCode-style Progress Gauge */}
+              <LeetCodeProgressCard
+                easySolved={data.progress.easySolved}
+                easyTotal={data.progress.easyTotal}
+                mediumSolved={data.progress.mediumSolved}
+                mediumTotal={data.progress.mediumTotal}
+                hardSolved={data.progress.hardSolved}
+                hardTotal={data.progress.hardTotal}
+              />
+            </div>
 
             <QuickStart />
-            <ActivityGraph activityByDay={data.activityByDay} currentStreak={data.stats.currentStreak} />
+            <ActivityGraph
+              activityByDay={data.activityByDay}
+              currentStreak={data.stats.currentStreak}
+            />
             <RecentInterviews interviews={data.recentInterviews} />
           </>
         ) : (

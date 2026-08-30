@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Sparkles } from "lucide-react";
+import { X, Loader2, Sparkles,FileCode2 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { SubmissionDetail } from "../../types/problem.types";
 import { interviewService } from "../../services/interview.service";
@@ -8,13 +8,18 @@ import { getErrorMessage } from "../../utils/getErrorMessage";
 import AIFeedbackPanel from "./Aifeedbackpanel";
 import { STATUS_CONFIG } from "../../utils/submissionStatus";
 
+interface SubmissionDetailModalProps {
+  interviewId: string;
+  onClose: () => void;
+  onLoadInEditor?: (language: string, code: string) => void;
+}
 
 interface SubmissionDetailModalProps {
   interviewId: string;
   onClose: () => void;
 }
 
-const SubmissionDetailModal = ({ interviewId, onClose }: SubmissionDetailModalProps) => {
+const SubmissionDetailModal = ({ interviewId, onClose,onLoadInEditor }: SubmissionDetailModalProps) => {
   const [detail, setDetail] = useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -52,6 +57,12 @@ const SubmissionDetailModal = ({ interviewId, onClose }: SubmissionDetailModalPr
     } finally {
       setAnalyzing(false);
     }
+  };
+
+  const handleLoad = () => {
+    if (!detail || !onLoadInEditor) return;
+    onLoadInEditor(detail.language, detail.code);
+    onClose();
   };
 
   return (
@@ -109,13 +120,22 @@ const SubmissionDetailModal = ({ interviewId, onClose }: SubmissionDetailModalPr
                   )}
                 </div>
 
-                <div>
+                                <div>
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
                     Code
                   </p>
                   <pre className="max-h-80 overflow-auto rounded-xl bg-zinc-50 p-3 text-xs text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
                     <code>{detail.code}</code>
                   </pre>
+                  {onLoadInEditor && (
+                    <button
+                      onClick={handleLoad}
+                      className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#1a3a5c] transition-all duration-300 hover:underline dark:text-[#019bf0]"
+                    >
+                      <FileCode2 className="h-3.5 w-3.5" />
+                      Load this code into the editor
+                    </button>
+                  )}
                 </div>
 
                 {detail.status !== "compile_error" && !detail.feedback && (

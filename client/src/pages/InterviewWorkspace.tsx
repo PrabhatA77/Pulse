@@ -34,7 +34,7 @@ const LANGUAGES = [
 
 const InterviewWorkspace = () => {
   const [searchParams] = useSearchParams();
-  const topic = searchParams.get("topic") ?? undefined;
+  const tag = searchParams.get("tag") ?? undefined;
   const difficulty = searchParams.get("difficulty") ?? undefined;
   const problemId = searchParams.get("problemId") ?? undefined;
 
@@ -87,7 +87,7 @@ const InterviewWorkspace = () => {
       try {
         const { data } = problemId
           ? await problemService.getById(problemId)
-          : await problemService.getRandom(topic, difficulty);
+          : await problemService.getRandom(tag, difficulty);
 
         if (cancelled) return;
         setProblem(data);
@@ -131,7 +131,7 @@ const InterviewWorkspace = () => {
     return () => {
       cancelled = true;
     };
-  }, [problemId, topic, difficulty]);
+  }, [problemId, tag, difficulty]);
 
   const code = codeByLanguage[language] ?? "";
 
@@ -208,6 +208,30 @@ const InterviewWorkspace = () => {
     }
   }, [submitResult]);
 
+    const handleLoadSubmissionCode = useCallback(
+    (submissionLanguage: string, code: string) => {
+      const isSupported = LANGUAGES.some((l) => l.id === submissionLanguage);
+      if (!isSupported) {
+        toast.error(`This submission's language (${submissionLanguage}) isn't available in the editor anymore.`);
+        return;
+      }
+
+      setCodeByLanguage((prev) => ({ ...prev, [submissionLanguage]: code }));
+      setLanguage(submissionLanguage);
+
+      // Persist it as a draft too, same as normal typing — otherwise it'd
+      // look loaded but vanish on the next reload/problem switch.
+      if (problem) {
+        pendingDraftRef.current = { problemId: problem.id, language: submissionLanguage, code };
+        if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
+        draftSaveTimer.current = setTimeout(flushDraftSave, DRAFT_SAVE_DELAY_MS);
+      }
+
+      toast.success("Loaded that submission into the editor");
+    },
+    [problem, flushDraftSave],
+  );
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center dark:bg-[#0e1316]">
@@ -233,7 +257,7 @@ const InterviewWorkspace = () => {
   <div className="flex h-auto min-h-screen w-full flex-col gap-4 p-4 dark:bg-[#0e1316] md:h-screen md:flex-row md:overflow-hidden">
     {/* Problem Panel: compact on mobile, full height on desktop */}
     <div className="h-[30vh] w-full shrink-0 md:h-full md:w-95">
-      <ProblemPanel problem={problem} />
+      <ProblemPanel problem={problem} onLoadInEditor={handleLoadSubmissionCode} />
     </div>
 
     <div className="flex min-h-0 flex-1 flex-col gap-4">

@@ -21,7 +21,7 @@ export interface Problem {
   title: string;
   description: string;
   difficulty: string;
-  topic: string;
+  tags: string[];
   functionName: string;
   parameters: FunctionParam[];
   returnType: ParamType;
@@ -107,5 +107,5 @@ export interface ProblemSummary {
   id: string;
   title: string;
   difficulty: string;
-  topic: string;
+  tags: string[];
 }

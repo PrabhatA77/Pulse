@@ -50,7 +50,7 @@ export interface AdminProblemSummary {
   id: string;
   title: string;
   difficulty: Difficulty;
-  topic: string;
+  tags: string[];
   testCaseCount: number;
   createdAt: string;
 }
@@ -60,7 +60,7 @@ export interface AdminProblemDetail {
   id: string;
   title: string;
   difficulty: Difficulty;
-  topic: string;
+  tags: string[];
   description: string;
   constraints: string[];
   functionName: string;
@@ -77,7 +77,7 @@ export interface AdminProblemDetail {
 export interface ProblemFormPayload {
   title: string;
   difficulty: Difficulty;
-  topic: string;
+  tags: string[];
   description: string;
   constraints: string[];
   functionName: string;

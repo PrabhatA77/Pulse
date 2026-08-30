@@ -7,18 +7,6 @@ import toast from "react-hot-toast";
 import { problemService } from "../../services/problem.service";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 
-// const TOPICS = [
-//   "Arrays",
-//   "Strings",
-//   "Linked List",
-//   "Stacks & Queues",
-//   "Trees",
-//   "Graphs",
-//   "Dynamic Programming",
-//   "Recursion & BackTracking",
-//   "Sorting & Searching",
-//   "Greedy",
-// ];
 
 const TOPIC_BADGES: Record<string, string> = {
   Arrays: "ARR",
@@ -56,21 +44,21 @@ const QuickStart = () => {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<string[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
-  const [topic, setTopic] = useState("");
+  const [tag, setTag] = useState("");
   const [difficulty, setDifficulty] = useState(DIFFICULTIES[0]);
 
-  const [topicOpen, setTopicOpen] = useState(false);
+  const [tagOpen, setTagOpen] = useState(false);
   const [diffOpen, setDiffOpen] = useState(false);
 
-  const topicRef = useRef<HTMLDivElement>(null);
+  const tagRef = useRef<HTMLDivElement>(null);
   const diffRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (topicRef.current && !topicRef.current.contains(target)) {
-        setTopicOpen(false);
+      if (tagRef.current && !tagRef.current.contains(target)) {
+        setTagOpen(false);
       }
       if (diffRef.current && !diffRef.current.contains(target)) {
         setDiffOpen(false);
@@ -86,7 +74,7 @@ const QuickStart = () => {
       try {
         const { data } = await problemService.getTopics();
         setTopics(data.map((t) => t.name));
-        if (data.length > 0) setTopic(data[0].name);
+        if (data.length > 0) setTag(data[0].name);
       } catch (error) {
         toast.error(getErrorMessage(error, "Couldn't load topics"));
       } finally {
@@ -97,7 +85,7 @@ const QuickStart = () => {
 
   const handleStart = () => {
     navigate(
-      `/interview?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}`,
+      `/interview?topic=${encodeURIComponent(tag)}&difficulty=${encodeURIComponent(difficulty)}`,
     );
   };
 
@@ -136,7 +124,7 @@ const QuickStart = () => {
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Topic Selector */}
-        <div ref={topicRef} className="relative flex-1">
+        <div ref={tagRef} className="relative flex-1">
           <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400">
             <Layers className="h-3.5 w-3.5" />
             Topic
@@ -144,32 +132,32 @@ const QuickStart = () => {
           <button
             type="button"
             onClick={() => {
-              setTopicOpen((prev) => !prev);
+              setTagOpen((prev) => !prev);
               setDiffOpen(false);
             }}
-            aria-expanded={topicOpen}
+            aria-expanded={tagOpen}
             disabled={topicsLoading || topics.length === 0}
             className="group flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-100 hover:shadow focus:outline-none focus:ring-2 focus:ring-[#019bf0]/30 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
           >
             <div className="flex items-center gap-2.5 truncate">
               <span className="flex h-6 min-w-7 items-center justify-center rounded-md bg-zinc-200 px-1.5 text-[10px] font-bold text-zinc-700 transition-transform duration-200 group-hover:scale-105 dark:bg-zinc-700 dark:text-zinc-200">
-                {TOPIC_BADGES[topic] ?? "CODE"}
+                {TOPIC_BADGES[tag] ?? "CODE"}
               </span>
               <span className="truncate">
-                {topicsLoading ? "Loading…" : topic || "No topics yet"}
+                {topicsLoading ? "Loading…" : tag || "No topics yet"}
               </span>
             </div>
 
             <ChevronDown
               className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform duration-200 ${
-                topicOpen ? "rotate-180" : ""
+                tagOpen ? "rotate-180" : ""
               }`}
             />
           </button>
 
           {/* Animated Dropdown Menu for Topic */}
           <AnimatePresence>
-            {topicOpen && (
+            {tagOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -6, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -184,14 +172,14 @@ const QuickStart = () => {
                 </div>
 
                 {topics.map((item) => {
-                  const selected = item === topic;
+                  const selected = item === tag;
                   return (
                     <motion.button
                       key={item}
                       type="button"
                       onClick={() => {
-                        setTopic(item);
-                        setTopicOpen(false);
+                        setTag(item);
+                        setTagOpen(false);
                       }}
                       whileHover={{ x: 3 }}
                       whileTap={{ scale: 0.98 }}
@@ -240,7 +228,7 @@ const QuickStart = () => {
             type="button"
             onClick={() => {
               setDiffOpen((prev) => !prev);
-              setTopicOpen(false);
+              setTagOpen(false);
             }}
             aria-expanded={diffOpen}
             className="group flex w-full items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm font-medium text-zinc-800 shadow-sm transition-all duration-200 hover:border-zinc-300 hover:bg-zinc-100 hover:shadow focus:outline-none focus:ring-2 focus:ring-[#019bf0]/30 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
@@ -325,7 +313,7 @@ const QuickStart = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleStart}
-            disabled={!topic}
+            disabled={!tag}
             className="flex h-10.5 w-full items-center justify-center rounded-xl bg-[#1a3a5c] px-6 text-sm font-semibold uppercase tracking-wide text-white shadow transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#019bf0] sm:w-auto"
           >
             Start Coding

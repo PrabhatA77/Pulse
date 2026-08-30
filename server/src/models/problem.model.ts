@@ -53,7 +53,7 @@ export interface TestCase {
 export interface ProblemDocument extends Document {
   title: string;
   difficulty: Difficulty;
-  topic: string;
+  tags: string[];
   description: string;
   constraints: string[];
 
@@ -66,6 +66,8 @@ export interface ProblemDocument extends Document {
 
   createdAt:Date;
   updatedAt:Date;
+
+  hints?: string[];
 }
 
 const functionParamSchema = new Schema<FunctionParam>(
@@ -94,7 +96,14 @@ const problemSchema = new Schema<ProblemDocument>(
       enum: ["Easy", "Medium", "Hard"],
       required: true,
     },
-    topic: { type: String, trim:true, required: true },
+    tags: {
+      type: [String],
+      required: true,
+      validate: {
+        validator: (tags: string[]) => Array.isArray(tags) && tags.length > 0,
+        message: "A problem needs at least one tag",
+      },
+    },
     description: { type: String, required: true },
     constraints: { type: [String], default: [] },
     functionName: { type: String, required: true, trim: true },
@@ -115,7 +124,7 @@ const problemSchema = new Schema<ProblemDocument>(
     },
     expectedTimeComplexity: { type: String, required: true },
     expectedSpaceComplexity: { type: String, required: true },
-    // starterCode:{type:Map,of:String},
+    hints:{type:[String],default:[]},
   },
   { timestamps: true },
 );

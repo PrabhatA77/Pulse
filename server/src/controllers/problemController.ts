@@ -3,13 +3,14 @@ import { Problem } from "../models/problem.model.js";
 import type { ProblemDocument } from "../models/problem.model.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { Topic } from "../models/topic.model.js";
+import { generateHint } from "../services/gemini.service.js";
 
 export function toPublicProblem(problem:ProblemDocument){
     return {
     id: problem._id,
     title: problem.title,
     difficulty: problem.difficulty,
-    topic: problem.topic,
+    tags: problem.tags,
     description: problem.description,
 
     functionName: problem.functionName,
@@ -37,15 +38,15 @@ export async function getProblem(req:Request<{id:string}>,res:Response){
 }
 
 interface RandomProblemQuery{
-    topic ?:string;
+    tag ?:string;
     difficulty ?:string;
 }
 
 export async function getRandomProblem(req:Request<{},{},{},RandomProblemQuery>,res:Response){
-    const {topic,difficulty} = req.query;
+    const {tag,difficulty} = req.query;
 
     const filter: Record<string,string> = {};
-    if(topic) filter.topic = topic;
+    if(tag) filter.tags = tag;
     if(difficulty) filter.difficulty = difficulty;
 
     const [randomDoc] = await Problem.aggregate([{$match:filter},{$sample:{size:1}}]);
@@ -71,7 +72,43 @@ export async function listPublicProblems(_req: Request, res: Response) {
       id: p._id,
       title: p.title,
       difficulty: p.difficulty,
-      topic: p.topic,
+      tags: p.tags,
     })),
   );
+}
+
+interface HintQuery {
+  level?: string;
+}
+
+// GET /api/problems/:id/hint?level=1 — lazily generates and caches
+// progressive hints on the Problem doc itself, since a hint only depends
+// on the problem, not the requesting user. Regenerating levels already
+// cached is skipped entirely.
+export async function getHint(req: Request<{ id: string }, {}, {}, HintQuery>, res: Response) {
+  const level = Math.min(3, Math.max(1, parseInt(req.query.level ?? "1", 10) || 1));
+
+  const problem = await Problem.findById(req.params.id);
+  if (!problem) throw new AppError("Problem not found", 404);
+
+  const existing = problem.hints ?? [];
+  if (existing.length >= level) {
+    res.status(200).json({ hints: existing.slice(0, level) });
+    return;
+  }
+
+  const generated = [...existing];
+  for (let lvl = generated.length + 1; lvl <= level; lvl++) {
+    const hint = await generateHint(
+      { title: problem.title, description: problem.description, difficulty: problem.difficulty },
+      lvl,
+      generated,
+    );
+    generated.push(hint);
+  }
+
+  problem.hints = generated;
+  await problem.save();
+
+  res.status(200).json({ hints: generated });
 }

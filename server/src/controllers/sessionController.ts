@@ -42,11 +42,11 @@ export async function startSession(
 ) {
   if (!req.userId) throw new AppError("Not authenticated", 401);
 
-  const { difficulty, topic, durationMinutes } = req.body;
+  const { difficulty, tag, durationMinutes } = req.body;
 
   const filter: Record<string, string> = {};
   if (difficulty) filter.difficulty = difficulty;
-  if (topic) filter.topic = topic;
+  if (tag) filter.tags = tag;
 
   const [randomDoc] = await Problem.aggregate([{ $match: filter }, { $sample: { size: 1 } }]);
   if (!randomDoc) {

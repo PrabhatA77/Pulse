@@ -7,6 +7,8 @@ import {
   Clock,
   Loader2,
   Lightbulb,
+  Layers,
+  ChevronDown,
 } from "lucide-react";
 import type { Problem } from "../../types/problem.types";
 import type { SubmissionHistoryItem } from "../../types/problem.types";
@@ -63,6 +65,7 @@ const ProblemPanel = ({ problem, onLoadInEditor }: ProblemPanelProps) => {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<
     string | null
   >(null);
+  const [tagsOpen, setTagsOpen] = useState(false);
 
   const handleShowHistory = async () => {
     setActiveTab("history");
@@ -107,15 +110,44 @@ const ProblemPanel = ({ problem, onLoadInEditor }: ProblemPanelProps) => {
         {problem.title}
       </h2>
 
-      <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex items-center gap-2">
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLOR[problem.difficulty]}`}
         >
           {problem.difficulty}
         </span>
-        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-          {problem.topic}
-        </span>
+
+        <button
+          type="button"
+          onClick={() => setTagsOpen((prev) => !prev)}
+          aria-expanded={tagsOpen}
+          className="flex items-center gap-1.5 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 transition-all duration-300 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+        >
+          <Layers className="h-3 w-3" />
+          Topics ({problem.tags.length})
+          <ChevronDown
+            className={`h-3 w-3 transition-transform duration-200 ${tagsOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
+
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${
+          tagsOpen ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-1.5">
+            {problem.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-lg bg-zinc-100 px-2 py-1 text-center text-xs font-medium leading-snug text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Tab switcher */}

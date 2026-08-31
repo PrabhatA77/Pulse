@@ -21,6 +21,7 @@ export interface Problem {
   title: string;
   description: string;
   difficulty: string;
+  topic:string;
   tags: string[];
   functionName: string;
   parameters: FunctionParam[];
@@ -109,3 +110,5 @@ export interface ProblemSummary {
   difficulty: string;
   tags: string[];
 }
+
+export type TestCaseValue = string | number | boolean | TestCaseValue[];

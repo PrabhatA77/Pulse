@@ -7,7 +7,7 @@ type SeedProblem = Pick<
   ProblemDocument,
   | "title"
   | "difficulty"
-  | "topic"
+  | "tags"
   | "description"
   | "constraints"
   | "functionName"
@@ -22,7 +22,7 @@ const problems: SeedProblem[] = [
   {
     title: "Two Sum",
     difficulty: "Easy",
-    topic: "Arrays",
+    tags: ["Arrays"],
     description:
       "Given an array of integers nums and an integer target, return the indices of the two numbers that add up to target. Assume exactly one solution exists, and the same element can't be used twice.",
     constraints: [
@@ -65,7 +65,7 @@ const problems: SeedProblem[] = [
   {
     title: "Valid Parentheses",
     difficulty: "Easy",
-    topic: "Stacks & Queues",
+    tags: ["Stacks & Queues"],
     description:
       "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. Brackets must close in the correct order.",
     constraints: [
@@ -87,7 +87,7 @@ const problems: SeedProblem[] = [
   {
     title: "Maximum Subarray",
     difficulty: "Medium",
-    topic: "Dynamic Programming",
+    tags: ["Dynamic Programming"],
     description:
       "Given an integer array nums, find the contiguous subarray with the largest sum, and return that sum.",
     constraints: ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"],

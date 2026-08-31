@@ -29,7 +29,7 @@ function toAdminProblem(problem: ProblemDocument) {
 // GET /api/admin/problems — summary list for the admin table.
 export async function listProblems(_req: Request, res: Response) {
   const problems = await Problem.find()
-    .select("title difficulty topic testCases createdAt")
+    .select("title difficulty tags testCases createdAt")
     .sort({ createdAt: -1 });
 
   res.status(200).json(

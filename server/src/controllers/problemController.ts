@@ -64,7 +64,7 @@ export async function getTopics(_req: Request, res: Response) {
 
 export async function listPublicProblems(_req: Request, res: Response) {
   const problems = await Problem.find()
-    .select("title difficulty topic")
+    .select("title difficulty tags")
     .sort({ title: 1 });
 
   res.status(200).json(

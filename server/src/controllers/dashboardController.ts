@@ -23,6 +23,7 @@ interface LeanInterview {
   totalTestCases: number;
   allPassed: boolean;
   status: "compile_error" | "time_limit_exceeded" | "wrong_answer" | "accepted";
+  source: "practice" | "session";
   // Only set once the user has clicked "Analyze with AI" for that submission.
   feedback?: {
     correctnessSummary: string;
@@ -51,7 +52,7 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
 
       Interview.find({ user: userId })
         .sort({ createdAt: -1 })
-        .limit(20)
+        .limit(40)
         .populate("problem", "title difficulty")
         .lean<LeanInterview[]>(),
 
@@ -118,6 +119,7 @@ export async function getDashboard(req: AuthedRequest, res: Response) {
       createdAt: interview.createdAt.toISOString(),
       allPassed: interview.allPassed,
       status: interview.status,
+      source: interview.source ?? "practice",
       passedTestCases: interview.passedTestCases,
       totalTestCases: interview.totalTestCases,
       feedback: interview.feedback ?? null,

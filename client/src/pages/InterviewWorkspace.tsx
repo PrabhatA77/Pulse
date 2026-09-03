@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState,useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import ProblemPanel from "../components/workspace/ProblemPanel";
 import CodeEditorPanel from "../components/workspace/CodeEditorPanel";
 import ConsolePanel from "../components/workspace/ConsolePanel";
+import ResizableSplit from "../components/common/ResizeableSplit";
 import { problemService } from "../services/problem.service";
 import { executionService } from "../services/execution.service";
 import { interviewService } from "../services/interview.service";
@@ -13,10 +14,13 @@ import type {
   Problem,
   TestRunResult,
   SubmitResult,
+  TestCaseValue,
 } from "../types/problem.types";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { generateStarterCode } from "../utils/starterCode";
 import { draftService } from "../services/draft.service";
+import { useIsDesktop } from "../hooks/useIsDesktop";
+import { useEditorShortcuts } from "../hooks/useEditorShortcuts";
 
 const DRAFT_SAVE_DELAY_MS = 1000;
 
@@ -48,13 +52,13 @@ const InterviewWorkspace = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<TestRunResult | null>(null);
 
-  // Submit is now two phases: the verdict comes back immediately, and the
-  // AI feedback is fetched separately, only when the user asks for it.
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
-    const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isDesktop = useIsDesktop();
+
+  const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingDraftRef = useRef<{ problemId: string; language: string; code: string } | null>(null);
 
   const flushDraftSave = useCallback(() => {
@@ -71,8 +75,6 @@ const InterviewWorkspace = () => {
     }
   }, []);
 
-  // Flush any pending debounce on unmount (e.g. navigating away right
-  // after typing) so the last edit isn't silently dropped.
   useEffect(() => {
     return () => flushDraftSave();
   }, [flushDraftSave]);
@@ -104,9 +106,6 @@ const InterviewWorkspace = () => {
         );
         setDefaultCodeByLanguage(initialCode);
 
-        // Overlay any saved drafts for this problem on top of the starter
-        // code. A missing/failed fetch just falls back to starter code —
-        // not having drafts yet isn't an error worth a toast.
         let codeToUse = initialCode;
         try {
           const { data: drafts } = await draftService.get(data.id);
@@ -135,7 +134,7 @@ const InterviewWorkspace = () => {
 
   const code = codeByLanguage[language] ?? "";
 
-    const handleCodeChange = (value: string) => {
+  const handleCodeChange = (value: string) => {
     setCodeByLanguage((prev) => ({ ...prev, [language]: value }));
     if (!problem) return;
 
@@ -208,7 +207,16 @@ const InterviewWorkspace = () => {
     }
   }, [submitResult]);
 
-    const handleLoadSubmissionCode = useCallback(
+  const handleRunCustomTest = useCallback(
+    async (input: Record<string, TestCaseValue>) => {
+      if (!problem) throw new Error("No problem loaded");
+      const { data } = await executionService.executeCustom(problem.id, language, code, input);
+      return data;
+    },
+    [problem, language, code],
+  );
+
+  const handleLoadSubmissionCode = useCallback(
     (submissionLanguage: string, code: string) => {
       const isSupported = LANGUAGES.some((l) => l.id === submissionLanguage);
       if (!isSupported) {
@@ -219,8 +227,6 @@ const InterviewWorkspace = () => {
       setCodeByLanguage((prev) => ({ ...prev, [submissionLanguage]: code }));
       setLanguage(submissionLanguage);
 
-      // Persist it as a draft too, same as normal typing — otherwise it'd
-      // look loaded but vanish on the next reload/problem switch.
       if (problem) {
         pendingDraftRef.current = { problemId: problem.id, language: submissionLanguage, code };
         if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
@@ -231,6 +237,16 @@ const InterviewWorkspace = () => {
     },
     [problem, flushDraftSave],
   );
+
+  const runIfIdle = useCallback(() => {
+    if (!running && !submitting) handleRun();
+  }, [running, submitting, handleRun]);
+
+  const submitIfIdle = useCallback(() => {
+    if (!running && !submitting) handleSubmit();
+  }, [running, submitting, handleSubmit]);
+
+  useEditorShortcuts(runIfIdle, submitIfIdle, Boolean(problem));
 
   if (loading) {
     return (
@@ -253,43 +269,70 @@ const InterviewWorkspace = () => {
     );
   }
 
+  const editorPane = (
+    <CodeEditorPanel
+      language={language}
+      languages={LANGUAGES}
+      code={code}
+      defaultCode={defaultCodeByLanguage[language] ?? ""}
+      onLanguageChange={setLanguage}
+      onCodeChange={handleCodeChange}
+    />
+  );
+
+  const consolePane = (
+    <ConsolePanel
+      onRun={handleRun}
+      onSubmit={handleSubmit}
+      running={running}
+      submitting={submitting}
+      result={result}
+      submitResult={submitResult}
+      feedback={feedback}
+      analyzing={analyzing}
+      onAnalyze={handleAnalyze}
+      problem={problem}
+      onRunCustomTest={handleRunCustomTest}
+    />
+  );
+
   return (
-  <div className="flex h-auto min-h-screen w-full flex-col gap-4 p-4 dark:bg-[#0e1316] md:h-screen md:flex-row md:overflow-hidden">
-    {/* Problem Panel: compact on mobile, full height on desktop */}
-    <div className="h-[30vh] w-full shrink-0 md:h-full md:w-95">
-      <ProblemPanel problem={problem} onLoadInEditor={handleLoadSubmissionCode} />
-    </div>
-
-    <div className="flex min-h-0 flex-1 flex-col gap-4">
-      {/* Code Editor Panel: given generous height on mobile, flex on desktop */}
-      <div className="h-[50vh] min-h-87.5 md:h-auto md:min-h-0 md:flex-1">
-        <CodeEditorPanel
-          language={language}
-          languages={LANGUAGES}
-          code={code}
-          defaultCode={defaultCodeByLanguage[language] ?? ""}
-          onLanguageChange={setLanguage}
-          onCodeChange={handleCodeChange}
+    <div className="flex h-auto min-h-screen w-full flex-col gap-4 p-4 dark:bg-[#0e1316] md:h-screen md:overflow-hidden">
+      {isDesktop ? (
+        <ResizableSplit
+          direction="horizontal"
+          storageKey="pulse-split-h"
+          defaultFirstSize={26}
+          minFirstSize={18}
+          maxFirstSize={45}
+          first={<ProblemPanel problem={problem} onLoadInEditor={handleLoadSubmissionCode} />}
+          second={
+            <ResizableSplit
+              direction="vertical"
+              storageKey="pulse-split-v"
+              defaultFirstSize={68}
+              minFirstSize={30}
+              maxFirstSize={85}
+              className="pl-4"
+              first={<div className="h-full pb-2">{editorPane}</div>}
+              second={<div className="h-full pt-2">{consolePane}</div>}
+            />
+          }
         />
-      </div>
+      ) : (
+        <>
+          <div className="h-[30vh] w-full shrink-0">
+            <ProblemPanel problem={problem} onLoadInEditor={handleLoadSubmissionCode} />
+          </div>
 
-      {/* Console Panel: reduced to 200px (h-52) on mobile, restored to h-80 on desktop */}
-      <div className="h-52 shrink-0 md:h-80">
-        <ConsolePanel
-          onRun={handleRun}
-          onSubmit={handleSubmit}
-          running={running}
-          submitting={submitting}
-          result={result}
-          submitResult={submitResult}
-          feedback={feedback}
-          analyzing={analyzing}
-          onAnalyze={handleAnalyze}
-        />
-      </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <div className="h-[50vh] min-h-87.5">{editorPane}</div>
+            <div className="h-52 shrink-0">{consolePane}</div>
+          </div>
+        </>
+      )}
     </div>
-  </div>
-);
+  );
 };
 
 export default InterviewWorkspace;

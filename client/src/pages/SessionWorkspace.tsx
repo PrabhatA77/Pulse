@@ -6,14 +6,17 @@ import ProblemPanel from "../components/workspace/ProblemPanel";
 import CodeEditorPanel from "../components/workspace/CodeEditorPanel";
 import ConsolePanel from "../components/workspace/ConsolePanel";
 import SessionTimerBar from "../components/session/SessionTimerBar";
+import ResizableSplit from "../components/common/ResizeableSplit";
 import { sessionService } from "../services/session.service";
 import { executionService } from "../services/execution.service";
 import { interviewService } from "../services/interview.service";
 import { useCountdown } from "../hooks/useCountdown";
+import { useIsDesktop } from "../hooks/useIsDesktop";
+import { useEditorShortcuts } from "../hooks/useEditorShortcuts";
 import { generateStarterCode } from "../utils/starterCode";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import type { InterviewSession } from "../types/session.types";
-import type { TestRunResult, SubmissionDetail } from "../types/problem.types";
+import type { TestRunResult, SubmissionDetail, TestCaseValue } from "../types/problem.types";
 import SessionSummary from "../components/session/SessionSummary";
 
 const LANGUAGES = [
@@ -21,6 +24,10 @@ const LANGUAGES = [
   { id: "python", label: "Python" },
   { id: "cpp", label: "C++" },
   { id: "java", label: "Java" },
+  { id: "typescript", label: "TypeScript" },
+  { id: "go", label: "Go" },
+  { id: "ruby", label: "Ruby" },
+  { id: "rust", label: "Rust" },
 ];
 
 const SessionWorkspace = () => {
@@ -38,6 +45,8 @@ const SessionWorkspace = () => {
   const [interviewDetail, setInterviewDetail] = useState<SubmissionDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+
+  const isDesktop = useIsDesktop();
 
   // Guards the auto-submit-on-expiry callback from firing more than once.
   const hasAutoSubmitted = useRef(false);
@@ -64,9 +73,6 @@ const SessionWorkspace = () => {
           setCodeByLanguage(initialCode);
           setDefaultCodeByLanguage(initialCode);
         }
-        // Session already finished (e.g. reloading a completed/expired
-        // session's page) — fetch the full submission so the summary
-        // can render immediately instead of showing a stale editor.
         if (data.status !== "in_progress" && data.interviewId) {
           setDetailLoading(true);
           try {
@@ -125,8 +131,6 @@ const SessionWorkspace = () => {
         toast.success("Submitted!");
       }
 
-      // Fetch the full detail (code + status) for the summary view —
-      // reuses the same endpoint the "My Submissions" tab uses.
       setDetailLoading(true);
       try {
         const { data: detail } = await interviewService.getById(data.interviewId);
@@ -168,6 +172,25 @@ const SessionWorkspace = () => {
     }
   }, [interviewDetail]);
 
+  const handleRunCustomTest = useCallback(
+    async (input: Record<string, TestCaseValue>) => {
+      if (!session?.problem) throw new Error("No problem loaded");
+      const { data } = await executionService.executeCustom(session.problem.id, language, code, input);
+      return data;
+    },
+    [session, language, code],
+  );
+
+  const runIfIdle = useCallback(() => {
+    if (!running && !submitting) handleRun();
+  }, [running, submitting, handleRun]);
+
+  const submitIfIdle = useCallback(() => {
+    if (!running && !submitting) handleSubmit();
+  }, [running, submitting, handleSubmit]);
+
+  useEditorShortcuts(runIfIdle, submitIfIdle, session?.status === "in_progress");
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center dark:bg-[#0e1316]">
@@ -184,12 +207,36 @@ const SessionWorkspace = () => {
     );
   }
 
+  const editorPane = (
+    <CodeEditorPanel
+      language={language}
+      languages={LANGUAGES}
+      code={code}
+      defaultCode={defaultCodeByLanguage[language] ?? ""}
+      onLanguageChange={setLanguage}
+      onCodeChange={handleCodeChange}
+    />
+  );
+
+  const consolePane = (
+    <ConsolePanel
+      onRun={handleRun}
+      onSubmit={handleSubmit}
+      running={running}
+      submitting={submitting}
+      result={result}
+      submitResult={null}
+      feedback={null}
+      analyzing={false}
+      onAnalyze={() => {}}
+      problem={session.problem}
+      onRunCustomTest={handleRunCustomTest}
+    />
+  );
+
   return (
     <div className="flex h-auto min-h-screen w-full flex-col gap-4 p-4 dark:bg-[#0e1316] md:h-screen md:overflow-hidden">
       {session.status !== "in_progress" ? (
-        // Session is over — show the summary instead of the live
-        // editor/timer. Handles both "just submitted" and "reloaded a
-        // finished session" the same way, once interviewDetail lands.
         detailLoading || !interviewDetail ? (
           <div className="flex flex-1 items-center justify-center">
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading your results…</p>
@@ -206,38 +253,39 @@ const SessionWorkspace = () => {
         <>
           <SessionTimerBar remainingMs={remainingMs} durationMinutes={session.durationMinutes} />
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-            <div className="h-[30vh] w-full shrink-0 md:h-full md:w-95">
-              <ProblemPanel problem={session.problem} />
-            </div>
-
+          {isDesktop ? (
+            <ResizableSplit
+              direction="horizontal"
+              storageKey="pulse-split-h"
+              defaultFirstSize={26}
+              minFirstSize={18}
+              maxFirstSize={45}
+              first={<ProblemPanel problem={session.problem} />}
+              second={
+                <ResizableSplit
+                  direction="vertical"
+                  storageKey="pulse-split-v"
+                  defaultFirstSize={68}
+                  minFirstSize={30}
+                  maxFirstSize={85}
+                  className="pl-4"
+                  first={<div className="h-full pb-2">{editorPane}</div>}
+                  second={<div className="h-full pt-2">{consolePane}</div>}
+                />
+              }
+            />
+          ) : (
             <div className="flex min-h-0 flex-1 flex-col gap-4">
-              <div className="h-[50vh] min-h-87.5 md:h-auto md:min-h-0 md:flex-1">
-                <CodeEditorPanel
-                  language={language}
-                  languages={LANGUAGES}
-                  code={code}
-                  defaultCode={defaultCodeByLanguage[language] ?? ""}
-                  onLanguageChange={setLanguage}
-                  onCodeChange={handleCodeChange}
-                />
+              <div className="h-[30vh] w-full shrink-0">
+                <ProblemPanel problem={session.problem} />
               </div>
 
-              <div className="h-52 shrink-0 md:h-80">
-                <ConsolePanel
-                  onRun={handleRun}
-                  onSubmit={handleSubmit}
-                  running={running}
-                  submitting={submitting}
-                  result={result}
-                  submitResult={null}
-                  feedback={null}
-                  analyzing={false}
-                  onAnalyze={() => {}}
-                />
+              <div className="flex min-h-0 flex-1 flex-col gap-4">
+                <div className="h-[50vh] min-h-87.5">{editorPane}</div>
+                <div className="h-52 shrink-0">{consolePane}</div>
               </div>
             </div>
-          </div>
+          )}
         </>
       )}
     </div>

@@ -19,6 +19,7 @@ export interface RecentInterview {
   createdAt: string;
   allPassed: boolean;
   status: SubmissionStatus;
+  source: "practice" | "session";
   passedTestCases: number;
   totalTestCases: number;
   // Only present once the AI analysis has been run for that submission.

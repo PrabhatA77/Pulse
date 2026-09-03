@@ -50,9 +50,10 @@ const STATUS_LABEL: Record<SubmissionHistoryItem["status"], string> = {
 interface ProblemPanelProps {
   problem: Problem;
   onLoadInEditor?: (language: string, code: string) => void;
+  submissionSource?: "practice" | "session";
 }
 
-const ProblemPanel = ({ problem, onLoadInEditor }: ProblemPanelProps) => {
+const ProblemPanel = ({ problem, onLoadInEditor,submissionSource }: ProblemPanelProps) => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<
@@ -69,10 +70,10 @@ const ProblemPanel = ({ problem, onLoadInEditor }: ProblemPanelProps) => {
 
   const handleShowHistory = async () => {
     setActiveTab("history");
-    if (history !== null) return; // already fetched — tabs don't refetch on every click
+    if (history !== null) return;
     setHistoryLoading(true);
     try {
-      const { data } = await interviewService.getSubmissionHistory(problem.id);
+      const { data } = await interviewService.getSubmissionHistory(problem.id, submissionSource);
       setHistory(data);
     } catch (error) {
       toast.error(getErrorMessage(error, "Couldn't load submission history"));

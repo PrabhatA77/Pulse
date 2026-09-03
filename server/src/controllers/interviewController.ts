@@ -21,7 +21,7 @@ interface AuthedAnalyzeRequest extends Request<{id:string}>{
   userId?: string;
 }
 
-interface AuthedHistoryRequest extends Request<{ problemId: string }> {
+interface AuthedHistoryRequest extends Request<{ problemId: string }, {}, {}, { source?: string }> {
   userId?: string;
 }
 
@@ -77,6 +77,7 @@ export async function submitInterview(req: AuthedSubmitRequest, res: Response) {
     totalTestCases,
     allPassed: status === "accepted",
     status,
+    source: "practice",
   });
 
   // const feedback = await evaluateSubmission({
@@ -154,6 +155,7 @@ export async function analyzeInterview(req: AuthedAnalyzeRequest, res: Response)
 // their own progress on that specific question over time.
 export async function getSubmissionHistory(req: AuthedHistoryRequest, res: Response) {
   const { problemId } = req.params;
+  const { source } = req.query;
 
   if (!req.userId) {
     throw new AppError("Not authenticated", 401);
@@ -162,7 +164,12 @@ export async function getSubmissionHistory(req: AuthedHistoryRequest, res: Respo
     throw new AppError("Invalid problem id", 400);
   }
 
-  const submissions = await Interview.find({ user: req.userId, problem: problemId })
+  const filter: Record<string, unknown> = { user: req.userId, problem: problemId };
+  if (source === "practice" || source === "session") {
+    filter.source = source;
+  }
+
+  const submissions = await Interview.find(filter)
     .sort({ createdAt: -1 })
     .select("language status passedTestCases totalTestCases allPassed createdAt");
 

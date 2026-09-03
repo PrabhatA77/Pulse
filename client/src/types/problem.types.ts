@@ -62,6 +62,11 @@ export interface TestRunResult {
 
 export type ExecuteResponse = TestRunResult;
 
+export interface CustomTestResponse {
+  compileError?: string;
+  result: TestCaseResult | null;
+}
+
 export type SubmissionStatus =
   | "compile_error"
   | "time_limit_exceeded"

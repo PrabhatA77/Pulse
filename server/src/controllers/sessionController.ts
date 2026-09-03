@@ -42,17 +42,25 @@ export async function startSession(
 ) {
   if (!req.userId) throw new AppError("Not authenticated", 401);
 
-  const { difficulty, tag, durationMinutes } = req.body;
+  const { difficulty, tag, durationMinutes, problemId } = req.body;
 
-  const filter: Record<string, string> = {};
-  if (difficulty) filter.difficulty = difficulty;
-  if (tag) filter.tags = tag;
+  let problem: ProblemDocument | null;
 
-  const [randomDoc] = await Problem.aggregate([{ $match: filter }, { $sample: { size: 1 } }]);
-  if (!randomDoc) {
-    throw new AppError("No problems match that topic/difficulty yet", 404);
+  if (problemId) {
+    if (!Types.ObjectId.isValid(problemId)) throw new AppError("Invalid problem id", 400);
+    problem = await Problem.findById(problemId);
+    if (!problem) throw new AppError("Problem not found", 404);
+  } else {
+    const filter: Record<string, string> = {};
+    if (difficulty) filter.difficulty = difficulty;
+    if (tag) filter.tags = tag;
+
+    const [randomDoc] = await Problem.aggregate([{ $match: filter }, { $sample: { size: 1 } }]);
+    if (!randomDoc) {
+      throw new AppError("No problems match that topic/difficulty yet", 404);
+    }
+    problem = Problem.hydrate(randomDoc);
   }
-  const problem = Problem.hydrate(randomDoc);
 
   const startedAt = new Date();
   const expiresAt = new Date(startedAt.getTime() + durationMinutes * 60 * 1000);
@@ -131,6 +139,7 @@ export async function submitSession(
     totalTestCases,
     allPassed: status === "accepted",
     status,
+    source: "session",
   });
 
   session.interview = interview._id;

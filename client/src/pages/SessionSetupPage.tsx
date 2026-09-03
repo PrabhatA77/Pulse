@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Clock, Layers, Gauge, ArrowLeft } from "lucide-react";
+import { Clock, Layers, Gauge, ArrowLeft, Code2 } from "lucide-react";
 import { sessionService } from "../services/session.service";
 import { problemService } from "../services/problem.service";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { CustomSelect } from "../components/common/CustomSelect";
+import type { ProblemSummary } from "../types/problem.types";
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 const DURATIONS = [15, 30, 45, 60];
@@ -17,7 +18,11 @@ const SessionSetupPage = () => {
   const [difficulty, setDifficulty] = useState("Easy");
   const [duration, setDuration] = useState(30);
   const [starting, setStarting] = useState(false);
-  const [tag,setTag] = useState("any");
+  const [tag, setTag] = useState("any");
+
+  const [problems, setProblems] = useState<ProblemSummary[]>([]);
+  const [problemsLoading, setProblemsLoading] = useState(true);
+  const [problemId, setProblemId] = useState("random");
 
   useEffect(() => {
     (async () => {
@@ -32,12 +37,39 @@ const SessionSetupPage = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await problemService.list();
+        setProblems(data);
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Couldn't load problems"));
+      } finally {
+        setProblemsLoading(false);
+      }
+    })();
+  }, []);
+
+  // Only offer problems matching the currently selected difficulty/topic[cite: 1].
+  const filteredProblems = useMemo(() => {
+    return problems.filter((p) => {
+      const matchesDifficulty = p.difficulty === difficulty;
+      const matchesTag = tag === "any" || (p.tags ?? []).includes(tag);
+      return matchesDifficulty && matchesTag;
+    });
+  }, [problems, difficulty, tag]);
+
+  // Derive active problem ID during render instead of syncing via useEffect
+  const isSelectedProblemValid = filteredProblems.some((p) => p.id === problemId);
+  const activeProblemId = isSelectedProblemValid ? problemId : "random";
+
   const handleStart = async () => {
     setStarting(true);
     try {
       const { data } = await sessionService.start({
         difficulty,
         tag: tag === "any" ? undefined : tag,
+        problemId: activeProblemId === "random" ? undefined : activeProblemId,
         durationMinutes: duration,
       });
       navigate(`/session/${data.id}`);
@@ -51,6 +83,10 @@ const SessionSetupPage = () => {
   const tagOptions = [{ value: "any", label: "Any tag" }, ...topics.map((t) => ({ value: t, label: t }))];
   const difficultyOptions = DIFFICULTIES.map((d) => ({ value: d, label: d }));
   const durationOptions = DURATIONS.map((d) => ({ value: String(d), label: `${d} minutes` }));
+  const problemOptions = [
+    { value: "random", label: "Random problem" },
+    ...filteredProblems.map((p) => ({ value: p.id, label: p.title })),
+  ];
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center gap-6 px-4 py-12 dark:bg-[#0e1316]">
@@ -72,6 +108,13 @@ const SessionSetupPage = () => {
           <CustomSelect label="Topic" icon={<Layers className="h-3.5 w-3.5" />} value={tag} onChange={setTag} options={tagOptions} />
           <CustomSelect label="Difficulty" icon={<Gauge className="h-3.5 w-3.5" />} value={difficulty} onChange={setDifficulty} options={difficultyOptions} />
           <CustomSelect
+            label="Problem"
+            icon={<Code2 className="h-3.5 w-3.5" />}
+            value={activeProblemId}
+            onChange={setProblemId}
+            options={problemOptions}
+          />
+          <CustomSelect
             label="Duration"
             icon={<Clock className="h-3.5 w-3.5" />}
             value={String(duration)}
@@ -82,7 +125,7 @@ const SessionSetupPage = () => {
 
         <button
           onClick={handleStart}
-          disabled={starting || topicsLoading}
+          disabled={starting || topicsLoading || problemsLoading}
           className="mt-6 w-full rounded-xl bg-[#1a3a5c] px-4 py-2.5 text-sm font-semibold uppercase tracking-wide text-white shadow transition-all duration-300 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#019bf0]"
         >
           {starting ? "Starting…" : "Start Session"}

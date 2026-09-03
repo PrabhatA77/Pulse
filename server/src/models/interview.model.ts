@@ -1,5 +1,7 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
  
+export type InterviewSource = "practice" | "session";
+
 export interface InterviewFeedback {
   correctnessSummary: string;
   observedTimeComplexity: string;
@@ -26,6 +28,7 @@ export interface InterviewDocument extends Document {
   totalTestCases: number;
   allPassed: boolean;
   status: SubmissionStatus;
+  source: InterviewSource;
   feedback?: InterviewFeedback;
   createdAt: Date;
 }
@@ -57,6 +60,12 @@ const interviewSchema = new Schema<InterviewDocument>(
       type:String,
       enum:["compile_error","time_limit_exceeded","wrong_answer","accepted"],
       required:true,
+    },
+    source: {
+      type: String,
+      enum: ["practice", "session"],
+      default: "practice",
+      required: true,
     },
     feedback: { type: feedbackSchema, required: false },
   },

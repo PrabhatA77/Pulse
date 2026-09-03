@@ -5,6 +5,7 @@ export const DURATION_OPTIONS = [15, 30, 45, 60] as const;
 export const startSessionSchema = z.object({
   difficulty: z.enum(["Easy", "Medium", "Hard"]).optional(),
   tag: z.string().trim().min(1).optional(),
+  problemId: z.string().trim().min(1).optional(),
   durationMinutes: z
     .number()
     .int()

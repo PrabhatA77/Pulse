@@ -5,6 +5,7 @@ import type { InterviewSession } from "../../types/session.types";
 import { STATUS_CONFIG } from "../../utils/submissionStatus";
 import { formatTime } from "../../utils/formatTime";
 import AIFeedbackPanel from "../workspace/Aifeedbackpanel";
+import ConfettiBurst from "../common/ConfettiBurst";
 
 interface SessionSummaryProps {
   session: InterviewSession;
@@ -26,6 +27,7 @@ const SessionSummary = ({ session, detail, analyzing, onAnalyze }: SessionSummar
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 overflow-y-auto p-1">
+      <ConfettiBurst triggerKey={detail.status === "accepted" ? 1 : 0} />
       {/* Header */}
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">

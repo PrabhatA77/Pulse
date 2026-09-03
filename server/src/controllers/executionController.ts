@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { Problem } from "../models/problem.model.js";
+import type { TestCase, TestCaseValue } from "../models/problem.model.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { runTestCases } from "../services/testRunner.service.js";
 
@@ -43,4 +44,45 @@ export async function executeCode(
     compileError,
     results,
   });
+}
+
+interface ExecuteCustomBody {
+  problemId: string;
+  language: string;
+  code: string;
+  input: Record<string, TestCaseValue>;
+}
+
+// Ad-hoc single test case built from the candidate's own input — not
+// persisted, not graded (no real expectedOutput to compare against).
+// Lets the workspace act like a scratchpad instead of only running the
+// problem's seeded test cases.
+export async function executeCustom(
+  req: Request<{}, {}, ExecuteCustomBody>,
+  res: Response,
+) {
+  const { problemId, language, code, input } = req.body;
+
+  if (!problemId || !language || !code || !input || typeof input !== "object") {
+    throw new AppError("problemId, language, code, and input are all required", 400);
+  }
+
+  const problem = await Problem.findById(problemId);
+  if (!problem) {
+    throw new AppError("Problem not found", 404);
+  }
+
+  const signature = {
+    functionName: problem.functionName,
+    parameters: problem.parameters,
+    returnType: problem.returnType,
+  };
+
+  // expectedOutput is a placeholder — runTestCases needs one to satisfy
+  // TestCase's shape, but nothing here reads `.passed` for a custom run.
+  const adHocCase: TestCase = { input, expectedOutput: 0, isHidden: false };
+
+  const { results, compileError } = await runTestCases(language, code, signature, [adHocCase]);
+
+  res.status(200).json({ compileError, result: results[0] ?? null });
 }

@@ -26,6 +26,13 @@ function readStoredSize(storageKey: string | undefined, fallback: number): numbe
  * A simple two-pane resizable split (VS Code / LeetCode style), driven by
  * pointer events so it works with both mouse and touch. Compose two of
  * these (one horizontal, one nested vertical) to build a 3-pane layout.
+ *
+ * Both pane wrappers are themselves `flex flex-col` — not just flex
+ * *items* — so that whatever's placed inside (a simple `h-full` panel,
+ * or another nested ResizableSplit that sizes itself via `flex-1`)
+ * always has a real flex context to resolve its height against. Without
+ * this, a nested split's `flex-1` has no effect on a non-flex parent and
+ * it collapses to its content's minimum size.
  */
 const ResizableSplit = ({
   direction,
@@ -86,7 +93,10 @@ const ResizableSplit = ({
       ref={containerRef}
       className={`flex min-h-0 min-w-0 flex-1 ${isHorizontal ? "flex-row" : "flex-col"} ${className ?? ""}`}
     >
-      <div style={{ flexBasis: `${firstSize}%` }} className="min-h-0 min-w-0 shrink-0 grow-0">
+      <div
+        style={{ flexBasis: `${firstSize}%` }}
+        className="flex min-h-0 min-w-0 shrink-0 grow-0 flex-col"
+      >
         {first}
       </div>
 
@@ -108,7 +118,7 @@ const ResizableSplit = ({
         />
       </div>
 
-      <div className="min-h-0 min-w-0 flex-1">{second}</div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">{second}</div>
     </div>
   );
 };

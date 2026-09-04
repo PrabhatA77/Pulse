@@ -11,7 +11,7 @@ import type {
 import AIFeedbackPanel from "./Aifeedbackpanel";
 import { STATUS_CONFIG } from "../../utils/submissionStatus";
 import ConfettiBurst from "../common/ConfettiBurst";
-import { defaultCustomInputs, parseCustomInputs } from "../../utils/parseCustomTestInput";
+import { defaultCustomInputs, parseCustomInputs, customFieldHint } from "../../utils/parseCustomTestInput";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import { shortcutLabel } from "../../utils/platform";
 
@@ -53,26 +53,25 @@ const ConsolePanel = ({
 }: ConsolePanelProps) => {
   const [activeTab, setActiveTab] = useState<ConsoleTab>("console");
 
-  // Track the previous problem ID to detect when it changes
-  const [prevProblemId, setPrevProblemId] = useState(problem.id);
-
-  // Custom test scratchpad state — reset whenever the problem changes.
+  // Custom test scratchpad state — pre-filled from the problem's first
+  // example (if any) so the person sees a known-good, correctly-formatted
+  // value per field instead of guessing the expected format from blank.
   const [customValues, setCustomValues] = useState<Record<string, string>>(() =>
-    defaultCustomInputs(problem.parameters),
+    defaultCustomInputs(problem.parameters, problem.examples[0]?.input),
   );
   const [customRunning, setCustomRunning] = useState(false);
   const [customResponse, setCustomResponse] = useState<CustomTestResponse | null>(null);
   const [customFormError, setCustomFormError] = useState<string | null>(null);
 
-  // Reset custom form state synchronously during render when problem updates
-  if (prevProblemId !== problem.id) {
-    setPrevProblemId(problem.id);
-    setCustomValues(defaultCustomInputs(problem.parameters));
+  useEffect(() => {
+    setCustomValues(defaultCustomInputs(problem.parameters, problem.examples[0]?.input));
     setCustomResponse(null);
     setCustomFormError(null);
-  }
+  }, [problem.id]);
 
   // Fires a confetti burst the moment a submission first reads "accepted"
+  // — tracked via a counter (not a boolean) so submitting another
+  // accepted solution retriggers it instead of no-op'ing on an unchanged value.
   const [confettiTrigger, setConfettiTrigger] = useState(0);
   const prevStatusRef = useRef<string | null>(null);
   useEffect(() => {
@@ -106,7 +105,7 @@ const ConsolePanel = ({
   };
 
   const handleResetCustom = () => {
-    setCustomValues(defaultCustomInputs(problem.parameters));
+    setCustomValues(defaultCustomInputs(problem.parameters, problem.examples[0]?.input));
     setCustomResponse(null);
     setCustomFormError(null);
   };
@@ -149,6 +148,7 @@ const ConsolePanel = ({
         </div>
       </div>
 
+      {/* themed-scrollbar: see the CSS snippet — add it to your global stylesheet */}
       <div className="themed-scrollbar min-h-0 flex-1 overflow-auto p-4">
         {activeTab === "console" ? (
           submitResult ? (
@@ -238,45 +238,53 @@ const ConsolePanel = ({
           <div className="flex flex-col gap-4">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Try your own input against the current code — this doesn't get graded or saved, it's just a scratchpad.
+              Pre-filled with the problem's first example; edit any field below.
             </p>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {problem.parameters.map((param) => (
-                <div key={param.name} className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                    {param.name} <span className="text-zinc-400">({param.type})</span>
-                  </label>
-                  {param.type === "boolean" ? (
-                    <select
-                      value={customValues[param.name] ?? "false"}
-                      onChange={(e) =>
-                        setCustomValues((prev) => ({ ...prev, [param.name]: e.target.value }))
-                      }
-                      className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-[#1a3a5c] dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0]"
-                    >
-                      <option value="false">false</option>
-                      <option value="true">true</option>
-                    </select>
-                  ) : (
-                    <input
-                      value={customValues[param.name] ?? ""}
-                      onChange={(e) =>
-                        setCustomValues((prev) => ({ ...prev, [param.name]: e.target.value }))
-                      }
-                      placeholder={
-                        param.type.endsWith("[]")
-                          ? param.type === "string[]"
-                            ? '["a","b"]'
-                            : "[1,2,3]"
-                          : undefined
-                      }
-                      className={`rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-[#1a3a5c] dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0] ${
-                        param.type.endsWith("[]") ? "font-mono text-xs" : ""
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="flex flex-col gap-4">
+              {problem.parameters.map((param) => {
+                const hint = customFieldHint(param.type);
+                return (
+                  <div key={param.name} className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <label
+                        htmlFor={`custom-${param.name}`}
+                        className="font-mono text-sm font-semibold text-zinc-700 dark:text-zinc-300"
+                      >
+                        {param.name} =
+                      </label>
+                      <span className="text-[10px] uppercase tracking-wide text-zinc-400">{param.type}</span>
+                    </div>
+
+                    {param.type === "boolean" ? (
+                      <select
+                        id={`custom-${param.name}`}
+                        value={customValues[param.name] ?? "false"}
+                        onChange={(e) =>
+                          setCustomValues((prev) => ({ ...prev, [param.name]: e.target.value }))
+                        }
+                        className="w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-[#1a3a5c] dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0]"
+                      >
+                        <option value="false">false</option>
+                        <option value="true">true</option>
+                      </select>
+                    ) : (
+                      <input
+                        id={`custom-${param.name}`}
+                        value={customValues[param.name] ?? ""}
+                        onChange={(e) =>
+                          setCustomValues((prev) => ({ ...prev, [param.name]: e.target.value }))
+                        }
+                        className={`w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-[#1a3a5c] dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-[#019bf0] ${
+                          param.type.endsWith("[]") ? "font-mono text-xs" : ""
+                        }`}
+                      />
+                    )}
+
+                    {hint && <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{hint}</span>}
+                  </div>
+                );
+              })}
             </div>
 
             {customFormError && <p className="text-xs text-red-500">{customFormError}</p>}
@@ -296,7 +304,7 @@ const ConsolePanel = ({
                 onClick={handleResetCustom}
                 className="text-xs font-medium text-zinc-500 transition-all duration-300 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
               >
-                Reset
+                Reset to example
               </button>
             </div>
 
@@ -305,18 +313,26 @@ const ConsolePanel = ({
                 {customResponse.compileError ? (
                   <pre className="whitespace-pre-wrap text-red-500">{customResponse.compileError}</pre>
                 ) : customResponse.result ? (
-                  <>
-                    <p className="font-semibold text-zinc-900 dark:text-white">Output</p>
-                    <code className="mt-1 block text-zinc-700 dark:text-zinc-300">
-                      {JSON.stringify(customResponse.result.actualOutput)}
-                    </code>
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <p className="font-semibold text-zinc-500 dark:text-zinc-400">Input</p>
+                      <code className="mt-0.5 block text-zinc-700 dark:text-zinc-300">
+                        {JSON.stringify(customResponse.result.input)}
+                      </code>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-zinc-900 dark:text-white">Output</p>
+                      <code className="mt-0.5 block text-zinc-700 dark:text-zinc-300">
+                        {JSON.stringify(customResponse.result.actualOutput)}
+                      </code>
+                    </div>
                     {customResponse.result.timedOut && (
-                      <p className="mt-2 text-amber-500">Timed out — check for infinite loops.</p>
+                      <p className="text-amber-500">Timed out — check for infinite loops.</p>
                     )}
                     {customResponse.result.stderr && (
-                      <pre className="mt-2 whitespace-pre-wrap text-red-500">{customResponse.result.stderr}</pre>
+                      <pre className="whitespace-pre-wrap text-red-500">{customResponse.result.stderr}</pre>
                     )}
-                  </>
+                  </div>
                 ) : (
                   <p className="text-zinc-500 dark:text-zinc-400">No output.</p>
                 )}

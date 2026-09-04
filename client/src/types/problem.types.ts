@@ -26,7 +26,7 @@ export interface Problem {
   functionName: string;
   parameters: FunctionParam[];
   returnType: ParamType;
-  examples: Array<{ input: string; output: string; explanation?: string }>;
+  examples: Array<{ input: Record<string, TestCaseValue>; output: TestCaseValue; explanation?: string }>;
   constraints: string[];
 }
 

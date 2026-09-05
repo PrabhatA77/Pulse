@@ -10,6 +10,8 @@ export const PARAM_TYPES = [
 ] as const;
 export type ParamType = (typeof PARAM_TYPES)[number];
 
+export type ProblemStatus = "solved" | "attempted" | "unsolved";
+
 export interface FunctionParam {
   name: string;
   type: ParamType;
@@ -28,6 +30,7 @@ export interface Problem {
   returnType: ParamType;
   examples: Array<{ input: Record<string, TestCaseValue>; output: TestCaseValue; explanation?: string }>;
   constraints: string[];
+  status?: ProblemStatus;
 }
 
 export interface InterviewFeedback {
@@ -114,6 +117,7 @@ export interface ProblemSummary {
   title: string;
   difficulty: string;
   tags: string[];
+  status?: ProblemStatus;
 }
 
 export type TestCaseValue = string | number | boolean | TestCaseValue[];

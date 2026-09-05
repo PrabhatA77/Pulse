@@ -1,12 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { problemService } from "../services/problem.service";
 import type { ProblemSummary } from "../types/problem.types";
 import { getErrorMessage } from "../utils/getErrorMessage";
 import { CustomSelect } from "../components/common/CustomSelect";
 import { useDebouncedValue } from "../hooks/useDebounceValue";
+import TableSkeleton from "../components/common/TableSkeleton";
+import {
+  ArrowLeft,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 
@@ -65,7 +73,8 @@ const ProblemsPage = () => {
         query === "" || p.title.toLowerCase().includes(query);
       const matchesDifficulty =
         difficultyFilter === "all" || p.difficulty === difficultyFilter;
-      const matchesTag = tagFilter === "all" || (p.tags ?? []).includes(tagFilter);
+      const matchesTag =
+        tagFilter === "all" || (p.tags ?? []).includes(tagFilter);
       return matchesSearch && matchesDifficulty && matchesTag;
     });
   }, [problems, debouncedSearch, difficultyFilter, tagFilter]);
@@ -208,9 +217,7 @@ const ProblemsPage = () => {
 
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
           {loading ? (
-            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
-              Loading…
-            </p>
+            <TableSkeleton rows={8} columns={3} />
           ) : problems.length === 0 ? (
             <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
               No problems available yet.
@@ -238,7 +245,21 @@ const ProblemsPage = () => {
                         className="cursor-pointer text-zinc-700 transition-colors duration-150 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800/60"
                       >
                         <td className="px-5 py-3 font-medium text-zinc-900 dark:text-white">
-                          {problem.title}
+                          <div className="flex items-center gap-2">
+                            {problem.status === "solved" && (
+                              <CheckCircle2
+                                className="h-4 w-4 shrink-0 text-green-500"
+                                aria-label="Solved"
+                              />
+                            )}
+                            {problem.status === "attempted" && (
+                              <Circle
+                                className="h-4 w-4 shrink-0 text-amber-500"
+                                aria-label="Attempted"
+                              />
+                            )}
+                            <span>{problem.title}</span>
+                          </div>
                         </td>
                         <td className="px-5 py-3">
                           <span

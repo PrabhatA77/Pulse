@@ -2,10 +2,14 @@ import OpenAI from "openai";
 import { AppError } from "../middleware/errorHandler.js";
 import { env } from "../config/env.js";
 
-const apiKey = env.openaiApiKey;
-const MODEL = "gpt-5.4-mini";
+// Z.ai exposes an OpenAI-compatible API — same `openai` SDK works,
+// just pointed at their base URL with a Z.ai key. Their global endpoint;
+// swap to https://open.bigmodel.cn/api/paas/v4 if you're on the China plan.
+const ZAI_BASE_URL = "https://api.z.ai/api/paas/v4";
+const apiKey = env.zaiApiKey;
+const MODEL = "glm-4.5-flash";
 
-const client = apiKey ? new OpenAI({ apiKey }) : null;
+const client = apiKey ? new OpenAI({ apiKey, baseURL: ZAI_BASE_URL }) : null;
 
 export interface EvaluationInput {
   problemTitle: string;
@@ -29,72 +33,21 @@ export interface EvaluationResult {
   followUpQuestion: string;
 }
 
-const evaluationSchema = {
-  type: "object",
-  properties: {
-    correctnessSummary: {
-      type: "string",
-      description:
-        "1 sentence note on correctness, consistent with the test results given - do not contradict them.",
-    },
-
-    observedTimeComplexity: {
-      type: "string",
-      description:
-        "Big-O time complexity of the submitted code, inferred by reading it.",
-    },
-
-    observedSpaceComplexity: {
-      type: "string",
-      description:
-        "Big-O space complexity of the submitted code, inferred by reading it.",
-    },
-
-    complexityMatchesExpected: {
-      type: "boolean",
-    },
-
-    codeQualityNotes: {
-      type: "string",
-      description: "1 sentences on readability, naming, and structure.",
-    },
-
-    strengths: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-      description: "1-2 short bullet points.",
-    },
-
-    areasToImprove: {
-      type: "array",
-      items: {
-        type: "string",
-      },
-      description: "1-2 short bullet points.",
-    },
-
-    followUpQuestion: {
-      type: "string",
-      description:
-        "One follow-up question a real interviewer would ask next, based on this submission.",
-    },
-  },
-
-  required: [
-    "correctnessSummary",
-    "observedTimeComplexity",
-    "observedSpaceComplexity",
-    "complexityMatchesExpected",
-    "codeQualityNotes",
-    "strengths",
-    "areasToImprove",
-    "followUpQuestion",
-  ],
-
-  additionalProperties: false,
-};
+// Z.ai's OpenAI-compatible API doesn't reliably support OpenAI's strict
+// `json_schema` structured-output mode, so instead of relying on the
+// provider to enforce a schema, we ask for JSON via `response_format:
+// json_object`, describe the exact shape in the prompt, and validate the
+// parsed result ourselves with isEvaluationResult() below.
+const EVALUATION_SHAPE_DESCRIPTION = `{
+  "correctnessSummary": string (1 sentence, consistent with the given test results — do not contradict them),
+  "observedTimeComplexity": string (Big-O, inferred by reading the code),
+  "observedSpaceComplexity": string (Big-O, inferred by reading the code),
+  "complexityMatchesExpected": boolean,
+  "codeQualityNotes": string (1 sentence on readability, naming, structure),
+  "strengths": string[] (1-2 short bullet points),
+  "areasToImprove": string[] (1-2 short bullet points),
+  "followUpQuestion": string (one follow-up question a real interviewer would ask next)
+}`;
 
 export async function generateHint(
   problem: { title: string; description: string; difficulty: string },
@@ -102,7 +55,7 @@ export async function generateHint(
   previousHints: string[],
 ): Promise<string> {
   if (!client) {
-    throw new AppError("OPENAI_API_KEY is not set", 500);
+    throw new AppError("ZAI_API_KEY is not set", 500);
   }
 
   const levelGuidance: Record<number, string> = {
@@ -133,32 +86,37 @@ Rules:
 5. Return only the hint text, nothing else (no "Hint 1:" prefix).`;
 
   try {
-    const response = await client.responses.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
-      input: prompt,
-      store: false,
+      messages: [{ role: "user", content: prompt }],
     });
 
-    const hint = response.output_text?.trim();
+    const hint = response.choices[0]?.message?.content?.trim();
     if (!hint) {
       throw new AppError("AI hint generator returned an empty response", 502);
     }
     return hint;
   } catch (error: any) {
     if (error instanceof AppError) throw error;
+
+    // Log the FULL detail so we can see what Z.ai actually said —
+    // status code, error body, everything. Remove/reduce once diagnosed.
+    console.error("Z.ai hint error — status:", error?.status);
+    console.error("Z.ai hint error — message:", error?.message);
+    console.error("Z.ai hint error — response data:", error?.error ?? error?.response?.data);
+
     if (error?.status === 429) {
       throw new AppError("Hint generation limit reached. Please try again later.", 429);
     }
-    console.error("OpenAI hint error:", error);
     throw new AppError("Hint generation failed", 502);
-  }
+}
 }
 
 export async function evaluateSubmission(
   input: EvaluationInput,
 ): Promise<EvaluationResult> {
   if (!client) {
-    throw new AppError("OPENAI_API_KEY is not set", 500);
+    throw new AppError("ZAI_API_KEY is not set", 500);
   }
 
   const prompt = `You are an experienced technical interviewer reviewing a candidate's code submission.
@@ -192,33 +150,28 @@ Rules:
 6. Do not claim that all tests passed if they did not.
 7. Do not claim that the solution is correct if the test results show failures.
 8. Give practical feedback that would be useful in a technical interview.
-9. Return only the requested structured evaluation.`;
+9. Respond with ONLY a single valid JSON object — no markdown fences, no commentary — matching exactly this shape:
+
+${EVALUATION_SHAPE_DESCRIPTION}`;
 
   try {
-    const response = await client.responses.create({
+    const response = await client.chat.completions.create({
       model: MODEL,
-      input: prompt,
-
-      text: {
-        format: {
-          type: "json_schema",
-          name: "evaluation_result",
-          strict: true,
-          schema: evaluationSchema,
-        },
-      },
-
-      store: false,
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
     });
 
-    if (!response.output_text) {
+    const raw = response.choices[0]?.message?.content;
+    if (!raw) {
       throw new AppError("AI evaluator returned an empty response", 502);
     }
 
     let parsed: unknown;
-
     try {
-      parsed = JSON.parse(response.output_text);
+      // Defensive strip in case the model wraps output in ```json fences
+      // despite instructions not to.
+      const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
+      parsed = JSON.parse(cleaned);
     } catch {
       throw new AppError("AI evaluator returned invalid JSON", 502);
     }
@@ -232,23 +185,17 @@ Rules:
 
     return parsed;
   } catch (error: any) {
-    // Preserve our own AppErrors
-    if (error instanceof AppError) {
-      throw error;
-    }
+    if (error instanceof AppError) throw error;
 
-    // OpenAI rate limit
+    console.error("Z.ai evaluation error — status:", error?.status);
+    console.error("Z.ai evaluation error — message:", error?.message);
+    console.error("Z.ai evaluation error — response data:", error?.error ?? error?.response?.data);
+
     if (error?.status === 429) {
-      throw new AppError(
-        "AI evaluation limit reached. Please try again later.",
-        429,
-      );
+      throw new AppError("AI evaluation limit reached. Please try again later.", 429);
     }
-
-    console.error("OpenAI evaluation error:", error);
-
     throw new AppError("AI evaluation failed", 502);
-  }
+}
 }
 
 function isEvaluationResult(value: unknown): value is EvaluationResult {

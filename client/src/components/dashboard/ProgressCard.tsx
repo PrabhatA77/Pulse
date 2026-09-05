@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { Check } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import AnimatedCounter from "../common/AnimatedCounter";
 
 interface LeetCodeProgressCardProps {
   easySolved?: number;
@@ -35,17 +38,42 @@ export const LeetCodeProgressCard = ({
   const medTrackLen = circumference * medRatio;
   const hardTrackLen = circumference * hardRatio;
 
-  const easyProgressLen = easyTotal > 0 ? (easySolved / easyTotal) * easyTrackLen : 0;
-  const medProgressLen = mediumTotal > 0 ? (mediumSolved / mediumTotal) * medTrackLen : 0;
-  const hardProgressLen = hardTotal > 0 ? (hardSolved / hardTotal) * hardTrackLen : 0;
+  const easyProgressLen =
+    easyTotal > 0 ? (easySolved / easyTotal) * easyTrackLen : 0;
+  const medProgressLen =
+    mediumTotal > 0 ? (mediumSolved / mediumTotal) * medTrackLen : 0;
+  const hardProgressLen =
+    hardTotal > 0 ? (hardSolved / hardTotal) * hardTrackLen : 0;
 
   // Gaps & Offsets (start rotated so Easy starts at bottom-left like LeetCode)
   const offsetEasy = circumference * 0.25;
   const offsetMed = offsetEasy - easyTrackLen;
   const offsetHard = offsetMed - medTrackLen;
 
+  type Segment = "easy" | "medium" | "hard";
+
+  const SEGMENT_LABEL: Record<Segment, string> = {
+    easy: "Easy",
+    medium: "Medium",
+    hard: "Hard",
+  };
+  const SEGMENT_COLOR: Record<Segment, string> = {
+    easy: "text-[#00b8a3]",
+    medium: "text-[#ffc01e]",
+    hard: "text-[#ef4743]",
+  };
+
+  const [hovered, setHovered] = useState<Segment | null>(null);
+
+  const segmentData: Record<Segment, { solved: number; total: number }> = {
+    easy: { solved: easySolved, total: easyTotal },
+    medium: { solved: mediumSolved, total: mediumTotal },
+    hard: { solved: hardSolved, total: hardTotal },
+  };
+
   return (
     <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl transition-all duration-300 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 sm:flex-row">
+      {/* Circular Gauge */}
       {/* Circular Gauge */}
       <div className="relative flex h-37.5 w-37.5 shrink-0 items-center justify-center">
         <svg width={size} height={size} className="-rotate-90">
@@ -61,6 +89,9 @@ export const LeetCodeProgressCard = ({
             strokeDasharray={`${easyTrackLen - 4} ${circumference}`}
             strokeDashoffset={-offsetEasy}
             strokeLinecap="round"
+            style={{ pointerEvents: "stroke", cursor: "pointer" }}
+            onMouseEnter={() => setHovered("easy")}
+            onMouseLeave={() => setHovered(null)}
           />
           <circle
             cx={size / 2}
@@ -73,6 +104,9 @@ export const LeetCodeProgressCard = ({
             strokeDasharray={`${medTrackLen - 4} ${circumference}`}
             strokeDashoffset={-offsetMed}
             strokeLinecap="round"
+            style={{ pointerEvents: "stroke", cursor: "pointer" }}
+            onMouseEnter={() => setHovered("medium")}
+            onMouseLeave={() => setHovered(null)}
           />
           <circle
             cx={size / 2}
@@ -85,9 +119,12 @@ export const LeetCodeProgressCard = ({
             strokeDasharray={`${hardTrackLen - 4} ${circumference}`}
             strokeDashoffset={-offsetHard}
             strokeLinecap="round"
+            style={{ pointerEvents: "stroke", cursor: "pointer" }}
+            onMouseEnter={() => setHovered("hard")}
+            onMouseLeave={() => setHovered(null)}
           />
 
-          {/* Active Progress Segments */}
+          {/* Active Progress Segments (unchanged, no hover needed here) */}
           {easyProgressLen > 0 && (
             <circle
               cx={size / 2}
@@ -99,7 +136,7 @@ export const LeetCodeProgressCard = ({
               strokeDasharray={`${easyProgressLen} ${circumference}`}
               strokeDashoffset={-offsetEasy}
               strokeLinecap="round"
-              className="transition-all duration-700 ease-out"
+              className="pointer-events-none transition-all duration-700 ease-out"
             />
           )}
           {medProgressLen > 0 && (
@@ -113,7 +150,7 @@ export const LeetCodeProgressCard = ({
               strokeDasharray={`${medProgressLen} ${circumference}`}
               strokeDashoffset={-offsetMed}
               strokeLinecap="round"
-              className="transition-all duration-700 ease-out"
+              className="pointer-events-none transition-all duration-700 ease-out"
             />
           )}
           {hardProgressLen > 0 && (
@@ -127,22 +164,62 @@ export const LeetCodeProgressCard = ({
               strokeDasharray={`${hardProgressLen} ${circumference}`}
               strokeDashoffset={-offsetHard}
               strokeLinecap="round"
-              className="transition-all duration-700 ease-out"
+              className="pointer-events-none transition-all duration-700 ease-out"
             />
           )}
         </svg>
 
         {/* Center Label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <div className="flex items-baseline">
-            <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              {totalSolved}
-            </span>
-            <span className="text-xs font-semibold text-zinc-400">/{totalProblems}</span>
-          </div>
-          <span className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-emerald-500">
-            <Check className="h-3 w-3 stroke-3" /> Solved
-          </span>
+          <AnimatePresence mode="wait">
+            {hovered ? (
+              <motion.div
+                key={hovered}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col items-center"
+              >
+                <span
+                  className={`text-xs font-semibold uppercase tracking-wide ${SEGMENT_COLOR[hovered]}`}
+                >
+                  {SEGMENT_LABEL[hovered]}
+                </span>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                    {segmentData[hovered].solved}
+                  </span>
+                  <span className="text-xs font-semibold text-zinc-400">
+                    /{segmentData[hovered].total}
+                  </span>
+                </div>
+                <span className="mt-0.5 text-[10px] text-zinc-400">solved</span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="total"
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col items-center"
+              >
+                <div className="flex items-baseline">
+                  <AnimatedCounter
+                    value={totalSolved}
+                    className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white"
+                  />
+                  <span className="text-xs font-semibold text-zinc-400">
+                    /{totalProblems}
+                  </span>
+                </div>
+                <span className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-emerald-500">
+                  <Check className="h-3 w-3 stroke-3" /> Solved
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

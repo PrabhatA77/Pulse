@@ -17,6 +17,8 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from "lucide-react";
+import AnimatedCounter from "../components/common/AnimatedCounter";
+import DashboardSkeleton from "../components/dashboard/DashboardSkeleton";
 
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
@@ -109,7 +111,7 @@ const DashboardPage = () => {
         </div>
 
         {loading ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+          <DashboardSkeleton />
         ) : data ? (
           <>
             <StreakBanner
@@ -128,9 +130,10 @@ const DashboardPage = () => {
                   </div>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-                    {data.stats.totalInterviews}
-                  </span>
+                  <AnimatedCounter
+                    value={data.stats.totalInterviews}
+                    className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl"
+                  />
                   <span className="text-xs font-medium text-zinc-400">
                     sessions
                   </span>
@@ -148,9 +151,10 @@ const DashboardPage = () => {
                   </div>
                 </div>
                 <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
-                    {data.stats.totalSolved}
-                  </span>
+                  <AnimatedCounter
+                    value={data.stats.totalSolved}
+                    className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl"
+                  />
                   <span className="text-xs font-medium text-zinc-400">
                     accepted
                   </span>

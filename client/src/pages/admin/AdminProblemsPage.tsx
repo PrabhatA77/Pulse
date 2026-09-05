@@ -15,6 +15,7 @@ import type { AdminProblemSummary } from "../../types/admin.types";
 import { DIFFICULTIES } from "../../types/admin.types";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 import { CustomSelect } from "../../components/common/CustomSelect";
+import TableSkeleton from "../../components/common/TableSkeleton";
 
 const DIFFICULTY_COLOR: Record<string, string> = {
   Easy: "text-green-500 bg-green-500/10",
@@ -73,7 +74,8 @@ const AdminProblemsPage = () => {
         query === "" || p.title.toLowerCase().includes(query);
       const matchesDifficulty =
         difficultyFilter === "all" || p.difficulty === difficultyFilter;
-      const matchesTag = tagFilter === "all" || (p.tags ?? []).includes(tagFilter);
+      const matchesTag =
+        tagFilter === "all" || (p.tags ?? []).includes(tagFilter);
       return matchesSearch && matchesDifficulty && matchesTag;
     });
   }, [problems, search, difficultyFilter, tagFilter]);
@@ -245,9 +247,7 @@ const AdminProblemsPage = () => {
 
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
           {loading ? (
-            <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
-              Loading…
-            </p>
+            <TableSkeleton rows={8} columns={5} withActions />
           ) : problems.length === 0 ? (
             <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
               No problems yet — add your first one above.

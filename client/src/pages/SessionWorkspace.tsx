@@ -260,7 +260,7 @@ const SessionWorkspace = () => {
               defaultFirstSize={26}
               minFirstSize={18}
               maxFirstSize={45}
-              first={<ProblemPanel problem={session.problem} />}
+              first={<ProblemPanel problem={session.problem} isTimedSession />}
               second={
                 <ResizableSplit
                   direction="vertical"
@@ -277,7 +277,7 @@ const SessionWorkspace = () => {
           ) : (
             <div className="flex min-h-0 flex-1 flex-col gap-4">
               <div className="h-[30vh] w-full shrink-0">
-                <ProblemPanel problem={session.problem} />
+                <ProblemPanel problem={session.problem} isTimedSession />
               </div>
 
               <div className="flex min-h-0 flex-1 flex-col gap-4">

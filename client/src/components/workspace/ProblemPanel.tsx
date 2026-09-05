@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
+  Circle,
   XCircle,
   Clock,
   Loader2,
@@ -51,9 +52,16 @@ interface ProblemPanelProps {
   problem: Problem;
   onLoadInEditor?: (language: string, code: string) => void;
   submissionSource?: "practice" | "session";
+  /** True inside the timed mock-interview workspace — hides the solved/attempted badge there. */
+  isTimedSession?: boolean;
 }
 
-const ProblemPanel = ({ problem, onLoadInEditor,submissionSource }: ProblemPanelProps) => {
+const ProblemPanel = ({
+  problem,
+  onLoadInEditor,
+  submissionSource,
+  isTimedSession = false,
+}: ProblemPanelProps) => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<
@@ -73,7 +81,10 @@ const ProblemPanel = ({ problem, onLoadInEditor,submissionSource }: ProblemPanel
     if (history !== null) return;
     setHistoryLoading(true);
     try {
-      const { data } = await interviewService.getSubmissionHistory(problem.id, submissionSource);
+      const { data } = await interviewService.getSubmissionHistory(
+        problem.id,
+        submissionSource,
+      );
       setHistory(data);
     } catch (error) {
       toast.error(getErrorMessage(error, "Couldn't load submission history"));
@@ -107,11 +118,26 @@ const ProblemPanel = ({ problem, onLoadInEditor,submissionSource }: ProblemPanel
         Back to dashboard
       </button>
 
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-        {problem.title}
-      </h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+          {problem.title}
+        </h2>
 
-            <div className="mt-2 flex items-center gap-2">
+        {!isTimedSession && problem.status === "solved" && (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-600 dark:text-green-400">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Solved
+          </span>
+        )}
+        {!isTimedSession && problem.status === "attempted" && (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
+            <Circle className="h-3.5 w-3.5" />
+            Attempted
+          </span>
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${DIFFICULTY_COLOR[problem.difficulty]}`}
         >
@@ -134,11 +160,13 @@ const ProblemPanel = ({ problem, onLoadInEditor,submissionSource }: ProblemPanel
 
       <div
         className={`grid transition-all duration-300 ease-in-out ${
-          tagsOpen ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          tagsOpen
+            ? "mt-2 grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="overflow-hidden">
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-1.5">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-1.5">
             {problem.tags.map((t) => (
               <span
                 key={t}
@@ -236,37 +264,42 @@ const ProblemPanel = ({ problem, onLoadInEditor,submissionSource }: ProblemPanel
           )}
         </>
       ) : activeTab === "hints" ? (
-          <div className="mt-4 flex flex-col gap-3">
-            {hints.map((hint,index)=>(
-              <div 
-                key={index}
-                className="rounded-xl border border-amber-200 bg-amber-500/5 p-3 text-sm text-zinc-700 dark:border-amber-900/50 dark:text-zinc-300"
-                >
-                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                    Hint {index + 1}
-                  </p>
-                  {hint}
-              </div>
-            ))}
+        <div className="mt-4 flex flex-col gap-3">
+          {hints.map((hint, index) => (
+            <div
+              key={index}
+              className="rounded-xl border border-amber-200 bg-amber-500/5 p-3 text-sm text-zinc-700 dark:border-amber-900/50 dark:text-zinc-300"
+            >
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                Hint {index + 1}
+              </p>
+              {hint}
+            </div>
+          ))}
 
-            {hints.length < 3 ? (
-              <button
-                onClick={handleRevealHint}
-                disabled={hintsLoading}
-                className="flex w-fit items-center gap-2 rounded-lg bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-600 transition-all duration-300 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-amber-400"
-              >
-                {hintsLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin"/>
-                ):(
-                  <Lightbulb className="h-3.5 w-3.5"/>
-                )}
-                {hintsLoading ? "Thinking..." : hints.length === 0 ? "Show a hint" : "Show another hint"}
-              </button>
-            ) : (
-              <p className="text-xs text-zinc-400">That's all the hints for this problem.</p>
-            )}
-
-          </div>
+          {hints.length < 3 ? (
+            <button
+              onClick={handleRevealHint}
+              disabled={hintsLoading}
+              className="flex w-fit items-center gap-2 rounded-lg bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-600 transition-all duration-300 hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-amber-400"
+            >
+              {hintsLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Lightbulb className="h-3.5 w-3.5" />
+              )}
+              {hintsLoading
+                ? "Thinking..."
+                : hints.length === 0
+                  ? "Show a hint"
+                  : "Show another hint"}
+            </button>
+          ) : (
+            <p className="text-xs text-zinc-400">
+              That's all the hints for this problem.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="mt-4 flex flex-col gap-2">
           {historyLoading ? (

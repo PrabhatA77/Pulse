@@ -5,8 +5,8 @@ import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 
 import AuthLayout from "../../components/auth/AuthLayout";
-import AuthInput from "../../components/auth/Authinput";
-import AuthButton from "../../components/auth/Authbutton";
+import AuthInput from "../../components/auth/AuthInput";
+import AuthButton from "../../components/auth/AuthButton";
 import { useAuthStore } from "../../store/authStore";
 import { getErrorMessage } from "../../utils/getErrorMessage";
 

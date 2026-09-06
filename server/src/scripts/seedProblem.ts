@@ -892,6 +892,630 @@ const problems: SeedProblem[] = [
     expectedTimeComplexity: "O(n log n)",
     expectedSpaceComplexity: "O(n)",
   },
+  // ---------------------------------------------------------------------
+// Bit Manipulation
+// ---------------------------------------------------------------------
+{
+  title: "Number of 1 Bits",
+  difficulty: "Easy",
+  tags: ["Bit Manipulation"],
+  description:
+    "Given a positive integer n, return the number of set bits (1s) in its binary representation.",
+  constraints: ["1 <= n <= 2^31 - 1"],
+  functionName: "hammingWeight",
+  parameters: [{ name: "n", type: "int" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { n: 11 },
+      expectedOutput: 3,
+      isHidden: false,
+      explanation: "11 in binary is 1011, which contains three 1 bits.",
+    },
+    { input: { n: 128 }, expectedOutput: 1, isHidden: false },
+    { input: { n: 1 }, expectedOutput: 1, isHidden: true },
+    {
+      input: { n: 2147483647 },
+      expectedOutput: 31,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(log n)",
+  expectedSpaceComplexity: "O(1)",
+},
+
+{
+  title: "Counting Bits",
+  difficulty: "Easy",
+  tags: ["Bit Manipulation"],
+  description:
+    "Given an integer n, return an array ans of length n + 1 where ans[i] is the number of 1 bits in the binary representation of i.",
+  constraints: ["0 <= n <= 10^5"],
+  functionName: "countBits",
+  parameters: [{ name: "n", type: "int" }],
+  returnType: "int[]",
+  testCases: [
+    {
+      input: { n: 2 },
+      expectedOutput: [0, 1, 1],
+      isHidden: false,
+    },
+    {
+      input: { n: 5 },
+      expectedOutput: [0, 1, 1, 2, 1, 2],
+      isHidden: false,
+    },
+    {
+      input: { n: 0 },
+      expectedOutput: [0],
+      isHidden: true,
+    },
+    {
+      input: { n: 8 },
+      expectedOutput: [0, 1, 1, 2, 1, 2, 2, 3, 1],
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(n)",
+},
+
+{
+  title: "Single Number",
+  difficulty: "Easy",
+  tags: ["Bit Manipulation"],
+  description:
+    "Given a non-empty array of integers where every element appears twice except for one element that appears exactly once, return the element that appears once.",
+  constraints: [
+    "1 <= nums.length <= 10^5",
+    "nums.length is odd",
+    "-10^9 <= nums[i] <= 10^9",
+  ],
+  functionName: "singleNumber",
+  parameters: [{ name: "nums", type: "int[]" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { nums: [2, 2, 1] },
+      expectedOutput: 1,
+      isHidden: false,
+    },
+    {
+      input: { nums: [4, 1, 2, 1, 2] },
+      expectedOutput: 4,
+      isHidden: false,
+    },
+    {
+      input: { nums: [1] },
+      expectedOutput: 1,
+      isHidden: true,
+    },
+    {
+      input: { nums: [-1, 2, 2, -1, 7] },
+      expectedOutput: 7,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(1)",
+},
+
+{
+  title: "Missing Number",
+  difficulty: "Easy",
+  tags: ["Bit Manipulation"],
+  description:
+    "Given an array nums containing n distinct numbers in the range [0, n], return the only number in the range that is missing from the array.",
+  constraints: [
+    "1 <= nums.length <= 10^5",
+    "All values in nums are unique",
+    "0 <= nums[i] <= nums.length",
+  ],
+  functionName: "missingNumber",
+  parameters: [{ name: "nums", type: "int[]" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { nums: [3, 0, 1] },
+      expectedOutput: 2,
+      isHidden: false,
+    },
+    {
+      input: { nums: [0, 1] },
+      expectedOutput: 2,
+      isHidden: false,
+    },
+    {
+      input: { nums: [9, 6, 4, 2, 3, 5, 7, 0, 1] },
+      expectedOutput: 8,
+      isHidden: true,
+    },
+    {
+      input: { nums: [0] },
+      expectedOutput: 1,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(1)",
+},
+
+// ---------------------------------------------------------------------
+// Sliding Window
+// ---------------------------------------------------------------------
+{
+  title: "Longest Substring Without Repeating Characters",
+  difficulty: "Medium",
+  tags: ["Sliding Window"],
+  description:
+    "Given a string s, find the length of the longest substring without repeating characters.",
+  constraints: [
+    "0 <= s.length <= 5*10^4",
+    "s consists of English letters, digits, symbols and spaces",
+  ],
+  functionName: "lengthOfLongestSubstring",
+  parameters: [{ name: "s", type: "string" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { s: "abcabcbb" },
+      expectedOutput: 3,
+      isHidden: false,
+      explanation:
+        'The longest substring without repeated characters is "abc".',
+    },
+    {
+      input: { s: "bbbbb" },
+      expectedOutput: 1,
+      isHidden: false,
+    },
+    {
+      input: { s: "pwwkew" },
+      expectedOutput: 3,
+      isHidden: true,
+    },
+    {
+      input: { s: "" },
+      expectedOutput: 0,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(min(n, character set size))",
+},
+
+{
+  title: "Minimum Size Subarray Sum",
+  difficulty: "Medium",
+  tags: ["Sliding Window"],
+  description:
+    "Given an array of positive integers nums and a positive integer target, return the minimal length of a contiguous subarray whose sum is greater than or equal to target. Return 0 if no such subarray exists.",
+  constraints: [
+    "1 <= target <= 10^9",
+    "1 <= nums.length <= 10^5",
+    "1 <= nums[i] <= 10^4",
+  ],
+  functionName: "minSubArrayLen",
+  parameters: [
+    { name: "target", type: "int" },
+    { name: "nums", type: "int[]" },
+  ],
+  returnType: "int",
+  testCases: [
+    {
+      input: { target: 7, nums: [2, 3, 1, 2, 4, 3] },
+      expectedOutput: 2,
+      isHidden: false,
+    },
+    {
+      input: { target: 4, nums: [1, 4, 4] },
+      expectedOutput: 1,
+      isHidden: false,
+    },
+    {
+      input: { target: 11, nums: [1, 1, 1, 1, 1, 1, 1, 1] },
+      expectedOutput: 0,
+      isHidden: true,
+    },
+    {
+      input: { target: 15, nums: [1, 2, 3, 4, 5] },
+      expectedOutput: 5,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(1)",
+},
+
+{
+  title: "Permutation in String",
+  difficulty: "Medium",
+  tags: ["Sliding Window"],
+  description:
+    "Given two strings s1 and s2, return true if s2 contains a permutation of s1 as a substring. A permutation uses the same characters with the same frequencies.",
+  constraints: [
+    "1 <= s1.length, s2.length <= 10^4",
+    "s1 and s2 consist of lowercase English letters",
+  ],
+  functionName: "checkInclusion",
+  parameters: [
+    { name: "s1", type: "string" },
+    { name: "s2", type: "string" },
+  ],
+  returnType: "boolean",
+  testCases: [
+    {
+      input: { s1: "ab", s2: "eidbaooo" },
+      expectedOutput: true,
+      isHidden: false,
+    },
+    {
+      input: { s1: "ab", s2: "eidboaoo" },
+      expectedOutput: false,
+      isHidden: false,
+    },
+    {
+      input: { s1: "adc", s2: "dcda" },
+      expectedOutput: true,
+      isHidden: true,
+    },
+    {
+      input: { s1: "a", s2: "a" },
+      expectedOutput: true,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(1)",
+},
+
+// ---------------------------------------------------------------------
+// Hard Problems
+// ---------------------------------------------------------------------
+
+{
+  title: "Trapping Rain Water",
+  difficulty: "Hard",
+  tags: ["Arrays"],
+  description:
+    "Given an array height representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.",
+  constraints: [
+    "1 <= height.length <= 2*10^5",
+    "0 <= height[i] <= 10^5",
+  ],
+  functionName: "trap",
+  parameters: [{ name: "height", type: "int[]" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { height: [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1] },
+      expectedOutput: 6,
+      isHidden: false,
+    },
+    {
+      input: { height: [4, 2, 0, 3, 2, 5] },
+      expectedOutput: 9,
+      isHidden: false,
+    },
+    {
+      input: { height: [1, 2, 3, 4] },
+      expectedOutput: 0,
+      isHidden: true,
+    },
+    {
+      input: { height: [3, 0, 2, 0, 4] },
+      expectedOutput: 9,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(1)",
+},
+
+{
+  title: "Minimum Window Substring",
+  difficulty: "Hard",
+  tags: ["Sliding Window"],
+  description:
+    "Given strings s and t, return the shortest substring of s that contains every character in t including duplicate characters. If no such substring exists, return an empty string.",
+  constraints: [
+    "1 <= s.length, t.length <= 10^5",
+    "s and t consist of uppercase and lowercase English letters",
+  ],
+  functionName: "minWindow",
+  parameters: [
+    { name: "s", type: "string" },
+    { name: "t", type: "string" },
+  ],
+  returnType: "string",
+  testCases: [
+    {
+      input: { s: "ADOBECODEBANC", t: "ABC" },
+      expectedOutput: "BANC",
+      isHidden: false,
+    },
+    {
+      input: { s: "a", t: "a" },
+      expectedOutput: "a",
+      isHidden: false,
+    },
+    {
+      input: { s: "a", t: "aa" },
+      expectedOutput: "",
+      isHidden: true,
+    },
+    {
+      input: { s: "ab", t: "b" },
+      expectedOutput: "b",
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(k)",
+},
+
+{
+  title: "Word Ladder",
+  difficulty: "Hard",
+  tags: ["Graphs"],
+  description:
+    "Given two words beginWord and endWord and a dictionary wordList, return the number of words in the shortest transformation sequence from beginWord to endWord. Only one letter may be changed at a time, and every transformed word must exist in wordList.",
+  constraints: [
+    "1 <= beginWord.length <= 10",
+    "endWord.length == beginWord.length",
+    "1 <= wordList.length <= 5000",
+    "All words consist of lowercase English letters",
+  ],
+  functionName: "ladderLength",
+  parameters: [
+    { name: "beginWord", type: "string" },
+    { name: "endWord", type: "string" },
+    { name: "wordList", type: "string[]" },
+  ],
+  returnType: "int",
+  testCases: [
+    {
+      input: {
+        beginWord: "hit",
+        endWord: "cog",
+        wordList: ["hot", "dot", "dog", "lot", "log", "cog"],
+      },
+      expectedOutput: 5,
+      isHidden: false,
+    },
+    {
+      input: {
+        beginWord: "hit",
+        endWord: "cog",
+        wordList: ["hot", "dot", "dog", "lot", "log"],
+      },
+      expectedOutput: 0,
+      isHidden: false,
+    },
+    {
+      input: {
+        beginWord: "a",
+        endWord: "c",
+        wordList: ["a", "b", "c"],
+      },
+      expectedOutput: 2,
+      isHidden: true,
+    },
+    {
+      input: {
+        beginWord: "lost",
+        endWord: "cost",
+        wordList: ["most", "fost", "lost", "cost", "fish"],
+      },
+      expectedOutput: 2,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(M^2 * N)",
+  expectedSpaceComplexity: "O(M * N)",
+},
+
+{
+  title: "Longest Valid Parentheses",
+  difficulty: "Hard",
+  tags: ["Stacks & Queues"],
+  description:
+    "Given a string containing only '(' and ')', return the length of the longest valid (well-formed) parentheses substring.",
+  constraints: [
+    "0 <= s.length <= 3*10^4",
+    "s consists only of '(' and ')'",
+  ],
+  functionName: "longestValidParentheses",
+  parameters: [{ name: "s", type: "string" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { s: "(()" },
+      expectedOutput: 2,
+      isHidden: false,
+    },
+    {
+      input: { s: ")()())" },
+      expectedOutput: 4,
+      isHidden: false,
+    },
+    {
+      input: { s: "" },
+      expectedOutput: 0,
+      isHidden: true,
+    },
+    {
+      input: { s: "()(()" },
+      expectedOutput: 2,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(n)",
+},
+
+{
+  title: "Edit Distance",
+  difficulty: "Hard",
+  tags: ["Dynamic Programming"],
+  description:
+    "Given two strings word1 and word2, return the minimum number of operations required to convert word1 into word2. You may insert, delete, or replace one character in a single operation.",
+  constraints: [
+    "0 <= word1.length, word2.length <= 500",
+    "word1 and word2 consist of lowercase English letters",
+  ],
+  functionName: "minDistance",
+  parameters: [
+    { name: "word1", type: "string" },
+    { name: "word2", type: "string" },
+  ],
+  returnType: "int",
+  testCases: [
+    {
+      input: { word1: "horse", word2: "ros" },
+      expectedOutput: 3,
+      isHidden: false,
+    },
+    {
+      input: { word1: "intention", word2: "execution" },
+      expectedOutput: 5,
+      isHidden: false,
+    },
+    {
+      input: { word1: "", word2: "abc" },
+      expectedOutput: 3,
+      isHidden: true,
+    },
+    {
+      input: { word1: "abc", word2: "abc" },
+      expectedOutput: 0,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(m * n)",
+  expectedSpaceComplexity: "O(m * n)",
+},
+
+{
+  title: "N-Queens",
+  difficulty: "Hard",
+  tags: ["Recursion & Backtracking"],
+  description:
+    "Given an integer n, place n queens on an n x n chessboard so that no two queens attack each other. Return the number of distinct valid arrangements.",
+  constraints: [
+    "1 <= n <= 9",
+  ],
+  functionName: "totalNQueens",
+  parameters: [{ name: "n", type: "int" }],
+  returnType: "int",
+  testCases: [
+    {
+      input: { n: 4 },
+      expectedOutput: 2,
+      isHidden: false,
+    },
+    {
+      input: { n: 1 },
+      expectedOutput: 1,
+      isHidden: false,
+    },
+    {
+      input: { n: 5 },
+      expectedOutput: 10,
+      isHidden: true,
+    },
+    {
+      input: { n: 8 },
+      expectedOutput: 92,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n!)",
+  expectedSpaceComplexity: "O(n)",
+},
+
+{
+  title: "Serialize and Deserialize Binary Tree",
+  difficulty: "Hard",
+  tags: ["Trees"],
+  description:
+    "Given a binary tree represented as a level-order array, serialize its structure and values into a string, then deserialize it back and return the resulting level-order representation. A value of -1 represents a missing node.",
+  constraints: [
+    "0 <= tree.length <= 1000",
+    "Node values are between -10^4 and 10^4",
+    "-1 represents a missing node",
+  ],
+  functionName: "serializeDeserialize",
+  parameters: [{ name: "tree", type: "int[]" }],
+  returnType: "int[]",
+  testCases: [
+    {
+      input: { tree: [1, 2, 3, -1, -1, 4, 5] },
+      expectedOutput: [1, 2, 3, -1, -1, 4, 5],
+      isHidden: false,
+    },
+    {
+      input: { tree: [1, 2, -1] },
+      expectedOutput: [1, 2, -1],
+      isHidden: false,
+    },
+    {
+      input: { tree: [1] },
+      expectedOutput: [1],
+      isHidden: true,
+    },
+    {
+      input: { tree: [] },
+      expectedOutput: [],
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(n)",
+},
+
+{
+  title: "Gas Station",
+  difficulty: "Medium",
+  tags: ["Greedy"],
+  description:
+    "There are n gas stations arranged in a circle. Given arrays gas and cost, return the starting gas station index from which you can travel around the circuit once, or -1 if it is impossible.",
+  constraints: [
+    "1 <= gas.length, cost.length <= 10^5",
+    "gas.length == cost.length",
+    "0 <= gas[i], cost[i] <= 10^4",
+  ],
+  functionName: "canCompleteCircuit",
+  parameters: [
+    { name: "gas", type: "int[]" },
+    { name: "cost", type: "int[]" },
+  ],
+  returnType: "int",
+  testCases: [
+    {
+      input: { gas: [1, 2, 3, 4, 5], cost: [3, 4, 5, 1, 2] },
+      expectedOutput: 3,
+      isHidden: false,
+    },
+    {
+      input: { gas: [2, 3, 4], cost: [3, 4, 3] },
+      expectedOutput: -1,
+      isHidden: false,
+    },
+    {
+      input: { gas: [5], cost: [4] },
+      expectedOutput: 0,
+      isHidden: true,
+    },
+    {
+      input: { gas: [2, 3, 4], cost: [3, 2, 3] },
+      expectedOutput: -1,
+      isHidden: true,
+    },
+  ],
+  expectedTimeComplexity: "O(n)",
+  expectedSpaceComplexity: "O(1)",
+},
 ];
 
 async function seed() {
